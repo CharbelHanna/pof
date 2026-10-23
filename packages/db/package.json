@@ -12,8 +12,8 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "generate:custom": "drizzle-kit generate --custom",
-    "migrate": "tsx src/migrate.ts",
-    "studio": "drizzle-kit studio",
+    "migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts",
+    "studio": "tsx --env-file-if-exists=../../.env ./node_modules/drizzle-kit/bin.cjs studio",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rimraf .turbo dist *.tsbuildinfo"
