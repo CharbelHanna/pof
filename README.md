@@ -78,15 +78,33 @@ is deliberately an unmade decision.
 
 ## Getting started
 
-Requires Node 20.9+ (Node 26 recommended), pnpm, and Docker.
+Requires Node 20.9+ (Node 26 recommended), pnpm, and Docker Desktop running.
 
 ```bash
 pnpm install
 cp .env.example .env          # defaults match docker-compose
 docker compose up -d          # Postgres + S3-compatible storage
-pnpm db:migrate
-pnpm test
+pnpm db:migrate               # apply migrations
+pnpm db:seed                  # a demo workspace and five shoots
 ```
+
+### What you can run today
+
+There is **no web application yet** — `apps/web` arrives later in Phase 0.
+Until then:
+
+| Command | What it does |
+|---|---|
+| `pnpm test` | 44 tests against a real Postgres 18 started by Testcontainers, with real migrations and real row-level security |
+| `pnpm db:seed` | Creates a demo workspace and shoots **through the real service layer**, so a successful run exercises `withTenant`, the RLS policies, the `updated_at` trigger and the idempotent create path. Safe to re-run. |
+| `pnpm db:studio` | Browse the database at <https://local.drizzle.studio> |
+| `pnpm typecheck` | Typecheck every package |
+
+The most informative thing to read is
+[`tenant-isolation.test.ts`](packages/db/src/testing/tenant-isolation.test.ts):
+it walks every domain table and proves a workspace cannot see, modify or write
+into another's data, and that a query escaping `withTenant` returns nothing
+rather than everything.
 
 ## Repository layout
 

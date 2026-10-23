@@ -10,6 +10,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "seed": "tsx --env-file-if-exists=../../.env src/seed.ts",
     "clean": "rimraf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@types/node": "^24.9.2",
     "postgres": "3.4.9",
     "rimraf": "^6.0.1",
+    "tsx": "4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }

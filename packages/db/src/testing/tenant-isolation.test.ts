@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 
 import { and, eq, getTableName, sql } from 'drizzle-orm'
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { createDatabase, type Database } from '../client.ts'
 import { organization } from '../schema/auth.ts'
 import { tenantTables, type TenantTableName } from '../schema/index.ts'
 import { withTenant } from '../tenant.ts'
+import { testDatabaseUrls } from './index.ts'
 import { tenantSeeds } from './seeds.ts'
 
 /**
@@ -53,7 +54,7 @@ const tableEntries = Object.entries(tenantTables) as [
 ][]
 
 beforeAll(async () => {
-  const created = createDatabase(inject('appUrl'), { max: 5 })
+  const created = createDatabase(testDatabaseUrls().appUrl, { max: 5 })
   db = created.db
   close = async () => {
     await created.client.end({ timeout: 5 })

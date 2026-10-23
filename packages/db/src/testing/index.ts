@@ -1,18 +1,26 @@
+import { inject } from 'vitest'
+
 export { tenantSeeds } from './seeds.ts'
 
 /**
- * Types for the values `global-setup.ts` hands to suites via `provide()`.
+ * Connection URLs for the Postgres that `global-setup.ts` started.
  *
- * Declared here rather than in global-setup.ts because other packages wire
- * that file in through a Vitest config string and never import it — so the
- * augmentation would not be part of their program and `inject('appUrl')`
- * would not typecheck. Importing '@pof/db/testing' in a suite brings these in.
+ * Exposed as a function rather than by augmenting Vitest's `ProvidedContext`
+ * interface. A `declare module 'vitest'` augmentation only applies to programs
+ * that actually include the declaring file, and consuming packages reference
+ * global-setup.ts as a Vitest config *string* — so they never import it, and
+ * `inject('appUrl')` fails to typecheck for them. Cross-package augmentation
+ * also resolves inconsistently depending on where `vitest` sits in the pnpm
+ * store.
+ *
+ * One narrow cast here, explained, beats that fragility spread across every
+ * package that wants a database test.
  */
-declare module 'vitest' {
-  interface ProvidedContext {
-    /** Connects as pof_app — unprivileged, RLS applies. What the app uses. */
-    appUrl: string
-    /** Connects as pof_owner — schema owner. Migrations and setup only. */
-    ownerUrl: string
+export function testDatabaseUrls(): { appUrl: string; ownerUrl: string } {
+  return {
+    /** pof_app — unprivileged, RLS applies. What the application uses. */
+    appUrl: inject('appUrl' as never) as unknown as string,
+    /** pof_owner — schema owner. Migrations and fixture setup only. */
+    ownerUrl: inject('ownerUrl' as never) as unknown as string,
   }
 }

@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto'
 
 import { createDatabase, schema, type Database, type TenantContext } from '@pof/db'
-// Brings the ProvidedContext augmentation into scope so inject() is typed.
-import '@pof/db/testing'
+import { testDatabaseUrls } from '@pof/db/testing'
 import { newId } from '@pof/schemas'
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { NotFoundError } from '../../errors.ts'
 import * as shoots from './shoot.service.ts'
@@ -34,7 +33,7 @@ async function newWorkspace(): Promise<TenantContext> {
 }
 
 beforeAll(async () => {
-  const created = createDatabase(inject('appUrl'), { max: 5 })
+  const created = createDatabase(testDatabaseUrls().appUrl, { max: 5 })
   db = created.db
   close = async () => {
     await created.client.end({ timeout: 5 })
