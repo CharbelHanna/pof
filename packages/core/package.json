@@ -1,0 +1,29 @@
+{
+  "name": "@pof/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ports": "./src/ports/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pof/db": "workspace:*",
+    "@pof/schemas": "workspace:*",
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "@pof/tsconfig": "workspace:*",
+    "@testcontainers/postgresql": "11.7.1",
+    "@types/node": "^24.9.2",
+    "postgres": "3.4.9",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

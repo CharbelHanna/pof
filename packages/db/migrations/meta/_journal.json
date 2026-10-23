@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792792109748,
+      "tag": "0000_military_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792792126107,
+      "tag": "0001_roles_and_rls",
+      "breakpoints": true
+    }
+  ]
+}

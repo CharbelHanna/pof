@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": false,
+    "incremental": true,
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    // Internal packages export TypeScript source and are compiled by whatever
+    // bundles the consuming app (Next's compiler, tsx, Vitest, and Metro in
+    // Phase 8). Nothing in this repo emits JS from tsc, so relative imports
+    // carry their real `.ts` extension — which keeps them resolvable by
+    // bundlers without extension-guessing. Requires noEmit, set per package.
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  }
+}

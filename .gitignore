@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+
+# env — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# test / tooling output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# local data volumes
+.data/

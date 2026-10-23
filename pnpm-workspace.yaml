@@ -1,0 +1,26 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Native/postinstall deps we explicitly trust to run build scripts.
+# pnpm blocks all others by default; add deliberately, never blanket-allow.
+# NOTE: this is `allowBuilds`, not the pre-pnpm-11 `onlyBuiltDependencies`,
+# which is silently ignored by pnpm >= 11 and leaves builds unapproved.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  # Pulled in by @testcontainers/postgresql via dockerode.
+  protobufjs: true
+  # ssh2's native crypto binding is optional and needs a C++ toolchain most dev
+  # machines and CI runners lack. It fails, logs noise, costs ~50s, then falls
+  # back to pure JS anyway. Skip the attempt.
+  ssh2: false
+  # Optional native accelerator for ssh2. Needs a C++ toolchain that CI and
+  # most dev machines lack; ssh2 falls back to pure JS without it. Denied
+  # explicitly so the prompt stays silenced and the choice is recorded.
+  cpu-features: false
+
+# pnpm 12 no longer reads the `pnpm` field in package.json, and prefers these
+# here over .npmrc. Keep all workspace-level pnpm settings in this file.
+autoInstallPeers: true
+strictPeerDependencies: false

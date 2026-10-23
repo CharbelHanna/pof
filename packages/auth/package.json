@@ -1,0 +1,26 @@
+{
+  "name": "@pof/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pof/config": "workspace:*",
+    "@pof/db": "workspace:*",
+    "@pof/schemas": "workspace:*",
+    "better-auth": "1.7.12"
+  },
+  "devDependencies": {
+    "@pof/tsconfig": "workspace:*",
+    "@types/node": "^24.9.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "@pof/tsconfig/portable.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
