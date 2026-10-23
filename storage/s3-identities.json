@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "pof-dev",
+      "credentials": [
+        {
+          "accessKey": "pofdev",
+          "secretKey": "pofdevsecret"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+# Normalise line endings in the repository to LF.
+#
+# This is not cosmetic. `db/init/01-roles.sh` is executed by the Postgres
+# container's entrypoint; if it is checked out with CRLF (the Git for Windows
+# default), the shebang becomes `#!/bin/bash\r` and the container fails with
+# "bad interpreter: /bin/bash^M". The same applies to any script a container
+# runs, and to the SQL migrations.
+#
+# Declaring it here rather than relying on each developer's core.autocrlf keeps
+# the behaviour identical on every machine and in CI.
+
+* text=auto eol=lf
+
+# Scripts and anything a Linux container executes MUST be LF.
+*.sh text eol=lf
+*.sql text eol=lf
+
+# Windows-only files keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files: never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Generated — collapse in diffs and exclude from language stats.
+pnpm-lock.yaml linguist-generated=true -diff
+packages/db/migrations/meta/*.json linguist-generated=true -diff

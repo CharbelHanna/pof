@@ -1,0 +1,9 @@
+{
+  "extends": "@pof/tsconfig/node.json",
+  "compilerOptions": {
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}

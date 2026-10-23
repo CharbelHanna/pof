@@ -1,0 +1,81 @@
+# The portability contract: if the stack runs here, it runs anywhere.
+#
+# No vendor primitives, no managed services — Postgres and an S3-compatible
+# bucket are the entire infrastructure. Jobs and cron live inside Postgres via
+# pg-boss (Phase 2), so there is no Redis and no platform scheduler to add.
+#
+# Application services (web, worker) are added to this file as they are built
+# in Phases 0 and 2.
+
+name: pof
+
+services:
+  postgres:
+    # Pinned to 18 for native uuidv7(), used as a convenience default on
+    # primary keys. Application code still mints UUIDv7 itself — see
+    # packages/db/src/schema/columns.ts for why that distinction matters.
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pof
+      # Consumed by db/init/01-roles.sh on first boot.
+      POF_OWNER_PASSWORD: owner_password
+      POF_APP_PASSWORD: app_password
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18+ images store data in a major-version subdirectory and
+      # expect a SINGLE mount at /var/lib/postgresql. Mounting the old
+      # /var/lib/postgresql/data path makes the entrypoint refuse to start.
+      - postgres-data:/var/lib/postgresql
+      # Runs once, on an empty data directory only. If you change the init
+      # script you must `docker compose down -v` for it to run again.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pof"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  storage:
+    # Local stand-in for Cloudflare R2 / AWS S3 / Backblaze B2. The
+    # StoragePort's S3 adapter talks to all of them with the same code; only
+    # STORAGE_ENDPOINT and credentials differ.
+    #
+    # SeaweedFS rather than MinIO: MinIO deleted minio/minio and minio/mc from
+    # Docker Hub in September 2026 and Quay stopped serving them anonymously
+    # days later. Community Edition is archived, source-only and unmaintained,
+    # so a registry repoint would only have deferred the problem. SeaweedFS is
+    # Apache-2.0, actively maintained and pulls anonymously.
+    #
+    # This is a development convenience only — nothing in the application
+    # knows it exists. Production points STORAGE_ENDPOINT at R2 or S3.
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3-identities.json -ip=storage
+    ports:
+      - "8333:8333"
+    volumes:
+      - storage-data:/data
+      - ./storage/s3-identities.json:/etc/seaweedfs/s3-identities.json:ro
+    healthcheck:
+      # Two non-obvious details:
+      #  - the host is `storage`, not localhost: `-ip=storage` above makes
+      #    SeaweedFS bind that interface only, so localhost is not listening.
+      #  - 403 counts as healthy. Anonymous ListBuckets is *supposed* to be
+      #    denied once identities are configured; demanding a 2xx here would
+      #    mark a correctly-secured server as unhealthy forever.
+      test:
+        - CMD-SHELL
+        - wget -S -q -O /dev/null http://storage:8333/ 2>&1 | grep -qE 'HTTP/1\.1 (200|403)'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  postgres-data:
+  storage-data:
