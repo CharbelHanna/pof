@@ -2,6 +2,14 @@
 node_modules/
 .pnpm-store/
 
+# Lockfiles from other package managers. This repo is pnpm-only: the workspace
+# layout, the `workspace:*` protocol and pnpm's isolated node_modules are all
+# load-bearing. A stray npm or yarn lockfile would silently install a
+# different, incompatible tree. A `preinstall` guard rejects them too.
+package-lock.json
+yarn.lock
+bun.lockb
+
 # builds
 dist/
 build/
