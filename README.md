@@ -104,6 +104,8 @@ rather than everything.
 | 5     | Locations, sun and weather                                       |         |
 | 6     | Clients and deliverables                                         |         |
 
+Wanted but not scheduled: see [BACKLOG.md](BACKLOG.md).
+
 ## Licence
 
 Not yet chosen. Until a `LICENSE` file is added the default applies — all rights
