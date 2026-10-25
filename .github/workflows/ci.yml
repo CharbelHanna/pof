@@ -6,12 +6,20 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  # Supersede in-flight runs on a PR branch — pushing a fixup should not wait
-  # behind the run it obsoletes. But never cancel on main: every commit there
-  # needs a recorded result, and cancelling leaves the history ambiguous about
-  # whether a commit ever passed.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # Isolation is expressed through the GROUP, not through a conditional
+  # cancel-in-progress.
+  #
+  # On main, the commit SHA is part of the group, so every commit gets a group
+  # of its own and no run can ever cancel another — each commit keeps a
+  # recorded result. On any other ref the group is just the ref, so pushing a
+  # fixup supersedes the run it obsoletes.
+  #
+  # An earlier attempt used `cancel-in-progress: ${{ github.ref !=
+  # 'refs/heads/main' }}` and did NOT work — main runs were still cancelled
+  # while queued (the tell is a cancelled run with zero jobs). Keeping the
+  # distinction in the group avoids relying on that expression entirely.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'shared' }}
+  cancel-in-progress: true
 
 env:
   # Node 26 is Active LTS as of 28 October 2026. Pinned here, in .node-version
