@@ -41,10 +41,12 @@ describe('parseServerEnv', () => {
   })
 
   it('coerces STORAGE_FORCE_PATH_STYLE from a string', () => {
-    expect(parseServerEnv({ ...valid, STORAGE_FORCE_PATH_STYLE: 'true' }).STORAGE_FORCE_PATH_STYLE)
-      .toBe(true)
-    expect(parseServerEnv({ ...valid, STORAGE_FORCE_PATH_STYLE: 'false' }).STORAGE_FORCE_PATH_STYLE)
-      .toBe(false)
+    expect(
+      parseServerEnv({ ...valid, STORAGE_FORCE_PATH_STYLE: 'true' }).STORAGE_FORCE_PATH_STYLE,
+    ).toBe(true)
+    expect(
+      parseServerEnv({ ...valid, STORAGE_FORCE_PATH_STYLE: 'false' }).STORAGE_FORCE_PATH_STYLE,
+    ).toBe(false)
   })
 
   it('rejects a short BETTER_AUTH_SECRET', () => {
@@ -76,9 +78,30 @@ describe('parseServerEnv', () => {
     expect(() => parseServerEnv({ ...valid, MAIL_PROVIDER: 'resend' })).toThrow(/RESEND_API_KEY/)
   })
 
-  it('refuses to discard mail in production', () => {
+  it('refuses to discard mail for a deployed production app', () => {
     expect(() =>
-      parseServerEnv({ ...valid, NODE_ENV: 'production', MAIL_PROVIDER: 'console' }),
+      parseServerEnv({
+        ...valid,
+        NODE_ENV: 'production',
+        MAIL_PROVIDER: 'console',
+        APP_URL: 'https://pointoffocus.app',
+      }),
     ).toThrow(/MAIL_PROVIDER/)
+  })
+
+  it('still allows console mail for a production build running locally', () => {
+    // `next start` and any locally-run production build set NODE_ENV to
+    // production. Refusing to boot then would make it impossible to exercise
+    // a production build on a laptop, which is exactly when you want to.
+    for (const origin of ['http://localhost:3000', 'http://127.0.0.1:3000']) {
+      expect(
+        parseServerEnv({
+          ...valid,
+          NODE_ENV: 'production',
+          MAIL_PROVIDER: 'console',
+          APP_URL: origin,
+        }).MAIL_PROVIDER,
+      ).toBe('console')
+    }
   })
 })

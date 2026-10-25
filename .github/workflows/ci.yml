@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Node 26 is Active LTS as of 28 October 2026. Pinned here, in .node-version
+  # and in the Dockerfiles so the three cannot drift.
+  NODE_VERSION: '26'
+
+jobs:
+  quality:
+    name: Typecheck & format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm format:check
+
+  portable:
+    name: Portable packages (protects the mobile path)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # @pof/schemas and @pof/api-client are the two packages a future Expo
+      # app will bundle with Metro. A runtime import of a Node builtin in
+      # either one breaks that build — months later, when the offending import
+      # is load-bearing and expensive to remove. Catch it on the commit that
+      # introduces it instead.
+      #
+      # Type-only imports are fine (they are erased before bundling), so this
+      # deliberately ignores `import type` lines.
+      - name: No Node builtins in portable packages
+        run: |
+          set -euo pipefail
+          pattern="^\s*import\s+(?!type\b)[^;]*from\s+['\"](node:|fs|path|crypto|os|child_process|stream|util|buffer|http|https|net|tls|zlib|worker_threads)"
+          if grep -rPn --include='*.ts' --include='*.tsx' "$pattern" \
+               packages/schemas/src packages/api-client/src; then
+            echo "::error::A portable package imports a Node builtin at runtime. Metro cannot bundle this."
+            exit 1
+          fi
+          echo "Portable packages are free of runtime Node imports."
+
+  test:
+    name: Unit & integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Testcontainers starts a real Postgres 18 and applies the real
+      # migrations, so the tenant-isolation suite exercises actual row-level
+      # security rather than a mock of it. GitHub runners ship Docker, so no
+      # service container or vendor database branch is needed — which is the
+      # same portability property the deployment has.
+      - run: pnpm test
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start infrastructure
+        run: docker compose up -d postgres storage
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T postgres pg_isready -U postgres -d pof >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready"; docker compose logs postgres; exit 1
+
+      - run: pnpm db:migrate
+        env:
+          DATABASE_MIGRATION_URL: postgresql://pof_owner:owner_password@localhost:5432/pof
+
+      - run: pnpm --filter @pof/web exec playwright install --with-deps chromium
+
+      - run: pnpm test:e2e
+        env:
+          DATABASE_URL: postgresql://pof_app:app_password@localhost:5432/pof
+          APP_URL: http://localhost:3000
+          BETTER_AUTH_SECRET: ci-secret-at-least-32-characters-long
+          STORAGE_BUCKET: pof-assets
+          STORAGE_ACCESS_KEY_ID: pofdev
+          STORAGE_SECRET_ACCESS_KEY: pofdevsecret
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+  docker:
+    name: Container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+
+      # Proves the portability claim on every commit: if these build, the
+      # stack runs on any container host. No vendor build packs involved.
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/worker/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -15,6 +15,13 @@
       "when": 1792792126107,
       "tag": "0001_roles_and_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792924599780,
+      "tag": "0002_pgboss_schema",
+      "breakpoints": true
     }
   ]
 }

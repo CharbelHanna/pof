@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/**
+ * Tailwind v4 configures in CSS rather than a JS config file.
+ *
+ * Monorepo gotcha: v4's automatic source detection does not cross package
+ * boundaries, so classes used inside workspace packages are not discovered.
+ * When @pof/ui lands, add `@source "../../../../packages/ui/src";` here or its
+ * styles will be silently dropped from the build.
+ */
+
+@theme {
+  --color-ink-50: oklch(0.98 0.004 260);
+  --color-ink-100: oklch(0.95 0.006 260);
+  --color-ink-200: oklch(0.89 0.008 260);
+  --color-ink-300: oklch(0.78 0.012 260);
+  --color-ink-500: oklch(0.58 0.016 260);
+  --color-ink-700: oklch(0.38 0.02 260);
+  --color-ink-900: oklch(0.21 0.022 260);
+  --color-ink-950: oklch(0.14 0.02 260);
+
+  /* Warm accent — golden hour, which is the product's emotional centre. */
+  --color-accent-400: oklch(0.82 0.13 72);
+  --color-accent-500: oklch(0.74 0.15 62);
+  --color-accent-600: oklch(0.64 0.15 54);
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-ink-50 text-ink-900 antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    @apply bg-ink-950 text-ink-100;
+  }
+}

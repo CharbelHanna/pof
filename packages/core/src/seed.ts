@@ -143,7 +143,9 @@ async function main(): Promise<void> {
     const withTombstones = await shoots.listShoots(db, ctx, { limit: 50, includeDeleted: true })
 
     console.log('')
-    console.log(`[seed] done. ${visible.items.length} active shoots, ${withTombstones.items.length} including tombstones.`)
+    console.log(
+      `[seed] done. ${visible.items.length} active shoots, ${withTombstones.items.length} including tombstones.`,
+    )
     console.log(`[seed] server clock for incremental sync: ${visible.syncedAt.toISOString()}`)
     console.log('[seed] browse the data with: pnpm db:studio')
   } finally {

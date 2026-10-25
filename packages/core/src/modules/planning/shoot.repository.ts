@@ -68,11 +68,7 @@ export async function findShootById(tx: TenantDb, workspaceId: string, id: strin
   return row
 }
 
-export async function listShoots(
-  tx: TenantDb,
-  workspaceId: string,
-  input: ListShootsInput,
-) {
+export async function listShoots(tx: TenantDb, workspaceId: string, input: ListShootsInput) {
   const predicates: (SQL | undefined)[] = [visibility(workspaceId, input.includeDeleted)]
 
   // Keyset pagination, never OFFSET: deep offsets degrade badly once a

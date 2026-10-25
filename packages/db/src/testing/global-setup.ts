@@ -82,8 +82,11 @@ export default async function setup({ provide }: TestProject) {
     await migrator.end({ timeout: 5 })
   }
 
-  provide('appUrl', appUrl)
-  provide('ownerUrl', ownerUrl)
+  // Casts pair with `testDatabaseUrls()` in ./index.ts, which is the typed
+  // way suites read these back. See that file for why the Vitest
+  // `ProvidedContext` augmentation is not used.
+  provide('appUrl' as never, appUrl as never)
+  provide('ownerUrl' as never, ownerUrl as never)
 
   return async () => {
     await container?.stop()

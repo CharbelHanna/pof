@@ -1,0 +1,45 @@
+{
+  "name": "@pof/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "node --env-file-if-exists=../../.env .next/standalone/apps/web/server.js",
+    "start:prepare": "cp -r .next/static .next/standalone/apps/web/.next/static && cp -r public .next/standalone/apps/web/public 2>/dev/null || true",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "clean": "rimraf .turbo .next *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^6.0.0",
+    "@orpc/openapi": "1.16.1",
+    "@orpc/server": "1.16.1",
+    "@pof/api": "workspace:*",
+    "@pof/api-client": "workspace:*",
+    "@pof/auth": "workspace:*",
+    "@pof/config": "workspace:*",
+    "@pof/core": "workspace:*",
+    "@pof/db": "workspace:*",
+    "@pof/schemas": "workspace:*",
+    "@tanstack/react-query": "^5.104.5",
+    "better-auth": "1.7.12",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-hook-form": "^7.91.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0",
+    "@pof/tsconfig": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  }
+}
