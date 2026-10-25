@@ -7,17 +7,25 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede in-flight runs on a PR branch — pushing a fixup should not wait
+  # behind the run it obsoletes. But never cancel on main: every commit there
+  # needs a recorded result, and cancelling leaves the history ambiguous about
+  # whether a commit ever passed.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   # Node 26 is Active LTS as of 28 October 2026. Pinned here, in .node-version
   # and in the Dockerfiles so the three cannot drift.
   NODE_VERSION: '26'
+  # apt, invoked by `playwright install --with-deps`, will block forever on an
+  # interactive prompt that nobody can answer on a runner.
+  DEBIAN_FRONTEND: noninteractive
 
 jobs:
   quality:
     name: Typecheck & format
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -32,6 +40,7 @@ jobs:
   portable:
     name: Portable packages (protects the mobile path)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -63,6 +72,7 @@ jobs:
   test:
     name: Unit & integration
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -82,6 +92,9 @@ jobs:
   e2e:
     name: End-to-end
     runs-on: ubuntu-latest
+    # Longer than the other jobs: this one starts containers, runs migrations,
+    # provisions a browser and executes twelve tests across two viewports.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -108,7 +121,27 @@ jobs:
         env:
           DATABASE_MIGRATION_URL: postgresql://pof_owner:owner_password@localhost:5432/pof
 
-      - run: pnpm --filter @pof/web exec playwright install --with-deps chromium
+      # Browsers are ~150MB and unchanged between runs; cache them on the
+      # resolved Playwright version so a bump invalidates the cache.
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          version=$(node -p "require('./apps/web/node_modules/@playwright/test/package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # `--with-deps` shells out to apt. DEBIAN_FRONTEND=noninteractive is set
+      # workflow-wide because without it apt can block on a prompt that nobody
+      # can answer, and the job then hangs until it is killed rather than
+      # failing. Only the system libraries are installed when the browser
+      # itself is already cached.
+      - name: Install Playwright browser
+        run: pnpm --filter @pof/web exec playwright install --with-deps chromium
 
       - run: pnpm test:e2e
         env:
@@ -129,6 +162,7 @@ jobs:
   docker:
     name: Container images
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
