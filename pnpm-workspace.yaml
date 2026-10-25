@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 
 # Native/postinstall deps we explicitly trust to run build scripts.
 # pnpm blocks all others by default; add deliberately, never blanket-allow.

@@ -59,6 +59,24 @@ export const updateShootSchema = z.object({
 })
 export type UpdateShootInput = z.infer<typeof updateShootSchema>
 
+/**
+ * Inputs must survive BOTH transports.
+ *
+ * The RPC surface sends a JSON body, so `limit` arrives as a real number and
+ * `includeDeleted` as a real boolean. The OpenAPI/REST surface serves the same
+ * procedure over `GET /shoots?limit=50`, where every value is a string. A
+ * plain `z.number()` therefore rejects every REST call — and only the REST
+ * call, which is exactly the kind of asymmetry that goes unnoticed until a
+ * third party integrates.
+ *
+ * `z.coerce.number()` accepts both. Booleans need more care: `z.coerce
+ * .boolean()` follows JavaScript truthiness, so the string "false" would
+ * become `true`. `z.stringbool()` parses the string correctly but rejects a
+ * real boolean, so the two are unioned.
+ */
+const queryNumber = z.coerce.number()
+const queryBoolean = z.union([z.boolean(), z.stringbool()])
+
 export const listShootsSchema = z.object({
   /**
    * Keyset pagination, never OFFSET. Deep OFFSET degrades badly once a
@@ -66,14 +84,14 @@ export const listShootsSchema = z.object({
    * needs later.
    */
   cursor: z.uuid().optional(),
-  limit: z.number().int().min(1).max(100).default(50),
+  limit: queryNumber.int().min(1).max(100).default(50),
   /**
    * Incremental sync hook, present from day one so the Phase 8 mobile client
    * needs no API change: return only rows touched since this instant,
    * including soft-deleted ones as tombstones.
    */
   updatedSince: z.coerce.date().optional(),
-  includeDeleted: z.boolean().default(false),
+  includeDeleted: queryBoolean.default(false),
 })
 export type ListShootsInput = z.infer<typeof listShootsSchema>
 

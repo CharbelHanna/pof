@@ -116,10 +116,16 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
 
   beforeAll(async () => {
     const [insertedA] = await withTenant(db, ctx(a()), (tx) =>
-      tx.insert(table).values(seed(a()) as never).returning({ id: table.id }),
+      tx
+        .insert(table)
+        .values(seed(a()) as never)
+        .returning({ id: table.id }),
     )
     const [insertedB] = await withTenant(db, ctx(b()), (tx) =>
-      tx.insert(table).values(seed(b()) as never).returning({ id: table.id }),
+      tx
+        .insert(table)
+        .values(seed(b()) as never)
+        .returning({ id: table.id }),
     )
 
     rowA = insertedA!.id
@@ -127,9 +133,7 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
   })
 
   it('shows a workspace only its own rows', async () => {
-    const visible = await withTenant(db, ctx(a()), (tx) =>
-      tx.select({ id: table.id }).from(table),
-    )
+    const visible = await withTenant(db, ctx(a()), (tx) => tx.select({ id: table.id }).from(table))
 
     expect(visible.map((row) => row.id)).toContain(rowA)
     expect(visible.map((row) => row.id)).not.toContain(rowB)

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { newId } from './id.ts'
-import { createShootSchema, listShootsSchema, shootTypeKeySchema, updateShootSchema } from './shoot.ts'
+import {
+  createShootSchema,
+  listShootsSchema,
+  shootTypeKeySchema,
+  updateShootSchema,
+} from './shoot.ts'
 
 describe('newId', () => {
   it('produces a valid v7 uuid', () => {
@@ -90,5 +95,31 @@ describe('listShootsSchema', () => {
     const parsed = listShootsSchema.parse({ updatedSince: '2026-10-01T00:00:00.000Z' })
     expect(parsed.updatedSince).toBeInstanceOf(Date)
     expect(parsed.updatedSince?.toISOString()).toBe('2026-10-01T00:00:00.000Z')
+  })
+
+  /**
+   * The same procedure is served over RPC (JSON body — real types) and over
+   * REST (`GET /shoots?limit=50` — everything is a string). Accepting only
+   * one shape breaks the other, and it breaks silently for whichever surface
+   * is tested less.
+   */
+  it('accepts limit as a number or as a query string', () => {
+    expect(listShootsSchema.parse({ limit: 25 }).limit).toBe(25)
+    expect(listShootsSchema.parse({ limit: '25' }).limit).toBe(25)
+  })
+
+  it('still enforces the cap when limit arrives as a string', () => {
+    expect(() => listShootsSchema.parse({ limit: '500' })).toThrow()
+  })
+
+  it('accepts includeDeleted as a boolean or as a query string', () => {
+    expect(listShootsSchema.parse({ includeDeleted: true }).includeDeleted).toBe(true)
+    expect(listShootsSchema.parse({ includeDeleted: 'true' }).includeDeleted).toBe(true)
+  })
+
+  it('reads the string "false" as false, not as a truthy string', () => {
+    // z.coerce.boolean() would return true here, silently including
+    // tombstones in every REST listing that tried to exclude them.
+    expect(listShootsSchema.parse({ includeDeleted: 'false' }).includeDeleted).toBe(false)
   })
 })

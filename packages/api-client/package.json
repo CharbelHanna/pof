@@ -1,0 +1,29 @@
+{
+  "name": "@pof/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@orpc/client": "1.16.1",
+    "@orpc/tanstack-query": "1.16.1",
+    "@pof/api": "workspace:*"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.104.5"
+  },
+  "devDependencies": {
+    "@orpc/server": "1.16.1",
+    "@pof/tsconfig": "workspace:*",
+    "@tanstack/react-query": "^5.104.5",
+    "@types/node": "24.9.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  }
+}
