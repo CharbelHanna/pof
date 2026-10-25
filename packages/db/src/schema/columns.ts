@@ -18,12 +18,8 @@ import { timestamp, uuid } from 'drizzle-orm/pg-core'
  * value; incremental sync (Phase 8) depends on `updatedAt` never going stale.
  */
 export const timestamps = {
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }
 
 /**

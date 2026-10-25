@@ -1,0 +1,14 @@
+{
+  "extends": "@pof/tsconfig/portable.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Type-only imports from @pof/api reach server packages whose own
+    // dependencies (drizzle, postgres) reference Node globals in their
+    // typings. Those types are erased before bundling, so they do not affect
+    // Metro — but tsc still has to resolve them. Runtime purity is enforced
+    // separately by the `portable` CI job, which greps for actual imports of
+    // Node builtins.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

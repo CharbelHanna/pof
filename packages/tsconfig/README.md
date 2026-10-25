@@ -2,13 +2,13 @@
 
 Shared TypeScript presets.
 
-| Preset | Used by |
-|---|---|
-| `base.json` | everything else extends this |
-| `portable.json` | `@pof/schemas`, `@pof/api-client` |
-| `node.json` | `@pof/db`, `@pof/core`, `@pof/api`, `apps/worker` |
-| `react-library.json` | `@pof/ui` |
-| `nextjs.json` | `apps/web` |
+| Preset               | Used by                                           |
+| -------------------- | ------------------------------------------------- |
+| `base.json`          | everything else extends this                      |
+| `portable.json`      | `@pof/schemas`, `@pof/api-client`                 |
+| `node.json`          | `@pof/db`, `@pof/core`, `@pof/api`, `apps/worker` |
+| `react-library.json` | `@pof/ui`                                         |
+| `nextjs.json`        | `apps/web`                                        |
 
 ## Why `portable.json` has `"types": []`
 

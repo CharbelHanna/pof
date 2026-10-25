@@ -1,0 +1,28 @@
+{
+  "name": "@pof/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .turbo dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@orpc/client": "1.16.1",
+    "@orpc/openapi": "1.16.1",
+    "@orpc/server": "1.16.1",
+    "@pof/core": "workspace:*",
+    "@pof/db": "workspace:*",
+    "@pof/schemas": "workspace:*",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@pof/tsconfig": "workspace:*",
+    "@types/node": "^24.9.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  }
+}

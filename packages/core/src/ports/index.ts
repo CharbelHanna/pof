@@ -1,6 +1,1 @@
-export type {
-  StoragePort,
-  UploadTarget,
-  ObjectMetadata,
-  CreateUploadOptions,
-} from './storage.ts'
+export type { StoragePort, UploadTarget, ObjectMetadata, CreateUploadOptions } from './storage.ts'

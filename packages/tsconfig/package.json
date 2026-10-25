@@ -2,5 +2,11 @@
   "name": "@pof/tsconfig",
   "version": "0.0.0",
   "private": true,
-  "files": ["base.json", "node.json", "portable.json", "react-library.json", "nextjs.json"]
+  "files": [
+    "base.json",
+    "node.json",
+    "portable.json",
+    "react-library.json",
+    "nextjs.json"
+  ]
 }
