@@ -24,7 +24,7 @@ services:
       POF_OWNER_PASSWORD: owner_password
       POF_APP_PASSWORD: app_password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       # Postgres 18+ images store data in a major-version subdirectory and
       # expect a SINGLE mount at /var/lib/postgresql. Mounting the old
@@ -34,7 +34,7 @@ services:
       # script you must `docker compose down -v` for it to run again.
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d pof"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d pof']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
     command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3-identities.json -ip=storage
     ports:
-      - "8333:8333"
+      - '8333:8333'
     volumes:
       - storage-data:/data
       - ./storage/s3-identities.json:/etc/seaweedfs/s3-identities.json:ro
@@ -75,6 +75,69 @@ services:
       timeout: 5s
       retries: 20
       start_period: 15s
+
+  # Applies migrations, then exits. Everything that needs the schema waits for
+  # this to complete, so a fresh `docker compose up` converges without anyone
+  # remembering to run a migration step by hand.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Runs as the schema OWNER — the only role permitted to run DDL.
+      DATABASE_MIGRATION_URL: postgresql://pof_owner:owner_password@postgres:5432/pof
+    # Runs from the worker's directory because that is where `tsx` is
+    # installed — pnpm's isolated node_modules means it is not resolvable from
+    # packages/db, whose own devDependencies are not part of this image.
+    working_dir: /repo/apps/worker
+    command: ['node', '--import', 'tsx', '../../packages/db/src/migrate.ts']
+    restart: 'no'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      APP_URL: http://localhost:3000
+      # pof_app: unprivileged, non-owner, so RLS genuinely applies.
+      DATABASE_URL: postgresql://pof_app:app_password@postgres:5432/pof
+      BETTER_AUTH_SECRET: local-development-secret-not-for-production-use
+      STORAGE_ENDPOINT: http://storage:8333
+      STORAGE_BUCKET: pof-assets
+      STORAGE_ACCESS_KEY_ID: pofdev
+      STORAGE_SECRET_ACCESS_KEY: pofdevsecret
+      STORAGE_FORCE_PATH_STYLE: 'true'
+      MAIL_PROVIDER: console
+    ports:
+      - '3000:3000'
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      APP_URL: http://localhost:3000
+      DATABASE_URL: postgresql://pof_app:app_password@postgres:5432/pof
+      BETTER_AUTH_SECRET: local-development-secret-not-for-production-use
+      STORAGE_ENDPOINT: http://storage:8333
+      STORAGE_BUCKET: pof-assets
+      STORAGE_ACCESS_KEY_ID: pofdev
+      STORAGE_SECRET_ACCESS_KEY: pofdevsecret
+      STORAGE_FORCE_PATH_STYLE: 'true'
+      MAIL_PROVIDER: console
+    restart: unless-stopped
 
 volumes:
   postgres-data:

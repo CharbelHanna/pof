@@ -74,7 +74,11 @@ export interface StoragePort {
   get(key: string): Promise<ReadableStream<Uint8Array>>
 
   /** Server-side write, used by the worker to store derivatives. */
-  put(key: string, body: Uint8Array | ReadableStream<Uint8Array>, meta: { mime: string }): Promise<void>
+  put(
+    key: string,
+    body: Uint8Array | ReadableStream<Uint8Array>,
+    meta: { mime: string },
+  ): Promise<void>
 
   /** Batch delete. Used by workspace deletion and the GDPR erase job. */
   delete(keys: string[]): Promise<void>

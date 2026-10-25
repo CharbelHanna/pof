@@ -1,0 +1,31 @@
+# Keep the build context small and never ship secrets or host-built binaries.
+#
+# node_modules in particular MUST be excluded: the host's install may be for a
+# different architecture, and copying it would shadow the image's own install.
+
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+.turbo
+**/.turbo
+coverage
+**/coverage
+playwright-report
+test-results
+
+.git
+.github
+.vscode
+.idea
+
+.env
+.env.*
+!.env.example
+
+*.md
+!README.md
+
+.data

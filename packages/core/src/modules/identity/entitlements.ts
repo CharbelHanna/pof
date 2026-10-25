@@ -59,11 +59,7 @@ export async function getPlan(_ctx: TenantContext): Promise<Plan> {
  * it currently does nothing. That is the entire point — the call site is the
  * expensive part to add later.
  */
-export async function assertWithin(
-  ctx: TenantContext,
-  limit: LimitKey,
-  count = 1,
-): Promise<void> {
+export async function assertWithin(ctx: TenantContext, limit: LimitKey, count = 1): Promise<void> {
   const plan = await getPlan(ctx)
   const allowed = plan.limits[limit]
 

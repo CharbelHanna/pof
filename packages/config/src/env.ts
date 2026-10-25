@@ -92,11 +92,25 @@ const serverSchema = z
         message: 'RESEND_API_KEY is required when MAIL_PROVIDER is "resend"',
       })
     }
-    if (env.NODE_ENV === 'production' && env.MAIL_PROVIDER === 'console') {
+    /**
+     * A deployed app must never silently discard mail. But NODE_ENV alone is
+     * the wrong test: `next start` and any locally-run production build set
+     * it, and refusing to boot then would make it impossible to exercise a
+     * production build on a laptop — which is exactly when you want to.
+     *
+     * Keying off the public origin instead keeps the real protection (a
+     * reachable deployment cannot drop password-reset emails on the floor)
+     * without blocking local verification.
+     */
+    const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(env.APP_URL)
+
+    if (env.NODE_ENV === 'production' && env.MAIL_PROVIDER === 'console' && !isLocalOrigin) {
       ctx.addIssue({
         code: 'custom',
         path: ['MAIL_PROVIDER'],
-        message: 'MAIL_PROVIDER "console" discards mail and is not allowed in production',
+        message:
+          'MAIL_PROVIDER "console" discards mail and is not allowed for a deployed app. ' +
+          'Set MAIL_PROVIDER=smtp or resend.',
       })
     }
   })

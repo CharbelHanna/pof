@@ -13,8 +13,13 @@
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false,
 
-    "declaration": true,
-    "declarationMap": true,
+    // No package in this repo emits declarations — every one exports
+    // TypeScript source that the consuming bundler compiles. Leaving
+    // `declaration` on would make tsc insist that every exported inferred
+    // type be *nameable* from the output, which fails under pnpm's isolated
+    // node_modules for types that reference a dependency's internal paths
+    // (TS2742) — a portability requirement for output we never produce.
+    "declaration": false,
     "sourceMap": true,
     "composite": false,
     "incremental": true,

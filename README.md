@@ -8,8 +8,10 @@ built for multiple genres: portrait, editorial, landscape and product work all
 have different needs, and the data model is designed so adding a genre is a
 configuration change rather than a migration.
 
-> **Status: early development.** Phase 0 (foundations) is in progress. There is
-> no usable application yet — see [Roadmap](#roadmap).
+> **Status: early development.** Phase 0 is complete — you can sign up, create
+> shoots and they persist, with tenant isolation enforced end to end. The
+> features that make it genuinely useful start at Phase 1. See
+> [Roadmap](#roadmap).
 
 ## The idea
 
@@ -66,15 +68,15 @@ is deliberately an unmade decision.
 
 ## Stack
 
-| Concern | Choice |
-|---|---|
-| Monorepo | pnpm workspaces + Turborepo |
-| Web | Next.js 16 (App Router) |
-| API | oRPC — one set of procedures serving a typed client *and* OpenAPI |
-| Database | Postgres 18 + Drizzle |
-| Auth | Better Auth (self-hosted) with the organization plugin |
-| Validation | Zod 4, shared between server, web and future mobile |
-| Testing | Vitest + Testcontainers (real Postgres, real migrations, real RLS) |
+| Concern    | Choice                                                             |
+| ---------- | ------------------------------------------------------------------ |
+| Monorepo   | pnpm workspaces + Turborepo                                        |
+| Web        | Next.js 16 (App Router)                                            |
+| API        | oRPC — one set of procedures serving a typed client _and_ OpenAPI  |
+| Database   | Postgres 18 + Drizzle                                              |
+| Auth       | Better Auth (self-hosted) with the organization plugin             |
+| Validation | Zod 4, shared between server, web and future mobile                |
+| Testing    | Vitest + Testcontainers (real Postgres, real migrations, real RLS) |
 
 ## Getting started
 
@@ -88,17 +90,34 @@ pnpm db:migrate               # apply migrations
 pnpm db:seed                  # a demo workspace and five shoots
 ```
 
-### What you can run today
+Then run the app:
 
-There is **no web application yet** — `apps/web` arrives later in Phase 0.
-Until then:
+```bash
+pnpm --filter @pof/web dev     # http://localhost:3000
+```
 
-| Command | What it does |
-|---|---|
-| `pnpm test` | 44 tests against a real Postgres 18 started by Testcontainers, with real migrations and real row-level security |
-| `pnpm db:seed` | Creates a demo workspace and shoots **through the real service layer**, so a successful run exercises `withTenant`, the RLS policies, the `updated_at` trigger and the idempotent create path. Safe to re-run. |
-| `pnpm db:studio` | Browse the database at <https://local.drizzle.studio> |
-| `pnpm typecheck` | Typecheck every package |
+Sign up, create a shoot, reload — it persists. Your workspace is provisioned
+automatically on first request.
+
+### Or run the whole stack in containers
+
+```bash
+docker compose up -d --build
+```
+
+Brings up Postgres, S3-compatible storage, the migration runner, the web app
+and the worker. This is also the portability test: if it runs here, it runs on
+any container host.
+
+### Commands
+
+| Command          | What it does                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test`      | 49 tests against a real Postgres 18 started by Testcontainers, with real migrations and real row-level security                                                                                                   |
+| `pnpm test:e2e`  | 12 Playwright tests at **mobile and desktop viewports**, against the real server, real auth and real RLS                                                                                                          |
+| `pnpm db:seed`   | A demo workspace and five shoots, created **through the real service layer** — so a successful run exercises `withTenant`, the policies, the `updated_at` trigger and the idempotent create path. Safe to re-run. |
+| `pnpm db:studio` | Browse the database at <https://local.drizzle.studio>                                                                                                                                                             |
+| `pnpm typecheck` | Typecheck every package and app                                                                                                                                                                                   |
 
 The most informative thing to read is
 [`tenant-isolation.test.ts`](packages/db/src/testing/tenant-isolation.test.ts):
@@ -127,15 +146,15 @@ so a React Native app can bundle them unchanged.
 
 ## Roadmap
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Foundations: monorepo, auth, tenancy, RLS, one entity end to end | in progress |
-| 1 | Campaigns, shoots, sessions, shoot-type registry | |
-| 2 | Assets, uploads, moodboards | |
-| 3 | Shot lists, checklists, on-set mode | |
-| 4 | Session templates | |
-| 5 | Locations, sun and weather | |
-| 6 | Clients and deliverables | |
+| Phase | Scope                                                            | Status  |
+| ----- | ---------------------------------------------------------------- | ------- |
+| 0     | Foundations: monorepo, auth, tenancy, RLS, one entity end to end | ✅ done |
+| 1     | Campaigns, shoots, sessions, shoot-type registry                 |         |
+| 2     | Assets, uploads, moodboards                                      |         |
+| 3     | Shot lists, checklists, on-set mode                              |         |
+| 4     | Session templates                                                |         |
+| 5     | Locations, sun and weather                                       |         |
+| 6     | Clients and deliverables                                         |         |
 
 ## Licence
 
