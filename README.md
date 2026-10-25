@@ -84,30 +84,44 @@ Requires Node 20.9+ (Node 26 recommended), pnpm, and Docker Desktop running.
 
 ```bash
 pnpm install
-cp .env.example .env          # defaults match docker-compose
-docker compose up -d          # Postgres + S3-compatible storage
-pnpm db:migrate               # apply migrations
-pnpm db:seed                  # a demo workspace and five shoots
+cp .env.example .env
 ```
 
-Then run the app:
+There are **two ways to run it**. Pick one — they are alternatives, not steps.
 
-```bash
-pnpm --filter @pof/web dev     # http://localhost:3000
-```
-
-Sign up, create a shoot, reload — it persists. Your workspace is provisioned
-automatically on first request.
-
-### Or run the whole stack in containers
+#### A. Everything in containers (simplest)
 
 ```bash
 docker compose up -d --build
 ```
 
-Brings up Postgres, S3-compatible storage, the migration runner, the web app
-and the worker. This is also the portability test: if it runs here, it runs on
-any container host.
+Starts Postgres, S3-compatible storage, the web app and the worker, and
+applies migrations automatically on the way up. Open <http://localhost:3000>.
+
+Nothing else to run. This is also the portability test: if it runs here, it
+runs on any container host.
+
+#### B. App on the host, infrastructure in containers (for development)
+
+Gives you hot reload and faster iteration.
+
+```bash
+docker compose up -d postgres storage   # infrastructure only
+pnpm db:migrate                         # apply migrations yourself
+pnpm dev                                # web + worker, with hot reload
+```
+
+Either way: sign up, create a shoot, reload — it persists. Your workspace is
+provisioned automatically on first request.
+
+Optionally seed demo data (a workspace and five shoots across genres):
+
+```bash
+pnpm db:seed
+```
+
+> **Port already in use?** Set `WEB_PORT=4000` in `.env` — it drives both the
+> published port and `APP_URL`. Don't edit `docker-compose.yml`.
 
 ### Commands
 
