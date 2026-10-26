@@ -17,7 +17,11 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      // No outputs: the suites report to stdout and write no coverage.
+      // Declaring `coverage/**` made Turbo warn "no output files found" on
+      // every single run — noise that trains people to ignore warnings.
+      // Add it back here if coverage reporting is ever turned on.
+      "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["^build"],

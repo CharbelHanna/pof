@@ -143,13 +143,19 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
-      # `--with-deps` shells out to apt. DEBIAN_FRONTEND=noninteractive is set
-      # workflow-wide because without it apt can block on a prompt that nobody
-      # can answer, and the job then hangs until it is killed rather than
-      # failing. Only the system libraries are installed when the browser
-      # itself is already cached.
+      # Deliberately WITHOUT `--with-deps`.
+      #
+      # `--with-deps` shells out to apt, and that step hung for the full job
+      # timeout on three separate runs — setting DEBIAN_FRONTEND=noninteractive
+      # did not help. The ubuntu-latest runner image already ships Playwright's
+      # browser libraries, so the apt pass has nothing to do here anyway.
+      #
+      # If a library ever is genuinely missing, Chromium fails to launch with a
+      # clear error in seconds, instead of the job hanging for 25 minutes and
+      # being reported as "cancelled" — which reads like someone pressed a
+      # button rather than a real failure.
       - name: Install Playwright browser
-        run: pnpm --filter @pof/web exec playwright install --with-deps chromium
+        run: pnpm --filter @pof/web exec playwright install chromium
 
       - run: pnpm test:e2e
         env:
