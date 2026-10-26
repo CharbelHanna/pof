@@ -42,7 +42,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3100',
     trace: 'on-first-retry',
   },
 
@@ -65,8 +65,20 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    // Invokes next directly rather than `pnpm dev`, whose script pins
+    // --port 3000.
+    command: 'pnpm exec next dev --port 3100',
+    // Deliberately not port 3000. `reuseExistingServer` attaches to whatever
+    // already holds the port, and if the compose stack is up that is the
+    // production container — so the suite silently exercises a different
+    // build, with Better Auth's rate limiting enabled (it is off when
+    // NODE_ENV is development), and sign-ups start returning 429.
+    //
+    // Running the tests on their own port means `docker compose up` and
+    // `pnpm test:e2e` no longer fight over one address, and the suite always
+    // gets the server it asked for.
+    url: 'http://localhost:3100',
+    env: { PORT: '3100', APP_URL: 'http://localhost:3100' },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',

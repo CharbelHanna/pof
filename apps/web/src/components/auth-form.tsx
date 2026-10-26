@@ -28,20 +28,31 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     const password = String(form.get('password') ?? '')
     const name = String(form.get('name') ?? '')
 
-    const result = isSignUp
-      ? await signUp.email({ email, password, name })
-      : await signIn.email({ email, password })
+    try {
+      const result = isSignUp
+        ? await signUp.email({ email, password, name })
+        : await signIn.email({ email, password })
 
-    if (result.error) {
-      setError(result.error.message ?? 'Something went wrong. Please try again.')
+      if (result.error) {
+        setError(messageFor(result.error))
+        return
+      }
+
+      // The workspace is provisioned lazily on the first authenticated request
+      // (see lib/session.ts), so there is nothing to wait for here.
+      router.push('/shoots')
+      router.refresh()
+    } catch {
+      // Without this, a thrown error (dropped connection, a rate-limit
+      // response the client surfaces by throwing) leaves the button stuck on
+      // "Please wait…" forever, with nothing explaining why and no way to
+      // retry short of reloading the page.
+      setError('Could not reach the server. Check your connection and try again.')
+    } finally {
+      // `finally`, not a call on each branch: the success path navigates away,
+      // but if that navigation is interrupted the form must not stay disabled.
       setPending(false)
-      return
     }
-
-    // The workspace is provisioned lazily on the first authenticated request
-    // (see lib/session.ts), so there is nothing to wait for here.
-    router.push('/shoots')
-    router.refresh()
   }
 
   return (
@@ -99,6 +110,21 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       </button>
     </form>
   )
+}
+
+/**
+ * Turn an auth error into something a photographer can act on.
+ *
+ * 429 matters here: Better Auth rate-limits by default when NODE_ENV is
+ * production, so a burst of attempts from one address gets throttled. Showing
+ * the raw message ("too many requests") reads like a bug rather than something
+ * that resolves by waiting.
+ */
+function messageFor(error: { status?: number; message?: string }): string {
+  if (error.status === 429) {
+    return 'Too many attempts. Please wait a moment and try again.'
+  }
+  return error.message ?? 'Something went wrong. Please try again.'
 }
 
 const inputClass =
