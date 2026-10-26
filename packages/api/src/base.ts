@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/client'
 import { os } from '@orpc/server'
 import { NotFoundError, PlanLimitExceededError, ValidationError } from '@pof/core'
+import { ZodError } from 'zod'
 
 import type { ApiContext } from './context.ts'
 
@@ -38,6 +39,31 @@ const mapDomainErrors = base.middleware(async ({ next }) => {
     if (error instanceof PlanLimitExceededError) {
       throw new ORPCError('FORBIDDEN', { message: error.message })
     }
+
+    /**
+     * Validation that cannot happen in the input schema.
+     *
+     * Genre-specific `details` are checked in the service layer, because the
+     * valid shape depends on `shootTypeKey` — a sibling field a field-level
+     * schema cannot see. The service therefore throws a ZodError *after*
+     * oRPC's own input validation has already passed.
+     *
+     * Without this branch that surfaced as a 500 "Internal server error":
+     * the user saw a server fault for what was really a typo, and the field
+     * that was wrong was never reported.
+     */
+    if (error instanceof ZodError) {
+      throw new ORPCError('BAD_REQUEST', {
+        message: 'Validation failed',
+        data: {
+          issues: error.issues.map((issue) => ({
+            path: issue.path.map(String),
+            message: issue.message,
+          })),
+        },
+      })
+    }
+
     throw error
   }
 })

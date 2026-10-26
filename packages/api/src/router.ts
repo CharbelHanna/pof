@@ -1,4 +1,8 @@
-import { pub } from './base.ts'
+import { shootTypes } from '@pof/core'
+
+import { authed, pub } from './base.ts'
+import { campaignRouter } from './routers/campaign.ts'
+import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
 
 /**
@@ -15,7 +19,24 @@ export const router = {
     .route({ method: 'GET', path: '/health', summary: 'Liveness probe' })
     .handler(() => ({ status: 'ok' as const, time: new Date().toISOString() })),
 
+  /**
+   * The genre list plus each genre's field definitions, so the dynamic form
+   * renderer needs no hardcoded knowledge of which genres exist.
+   *
+   * Authenticated despite being global reference data: there is no reason to
+   * expose the product's shape to anonymous callers, and keeping every
+   * non-health procedure behind auth means "is this one public?" is never a
+   * question anybody has to re-ask.
+   */
+  shootTypes: {
+    list: authed
+      .route({ method: 'GET', path: '/shoot-types', summary: 'List shoot types' })
+      .handler(({ context }) => shootTypes.listShootTypes(context.db)),
+  },
+
   shoots: shootRouter,
+  campaigns: campaignRouter,
+  sessions: sessionRouter,
 }
 
 export type AppRouter = typeof router

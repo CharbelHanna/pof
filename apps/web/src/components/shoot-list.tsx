@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SHOOT_STATUSES, newId, type ShootStatus } from '@pof/schemas'
+import Link from 'next/link'
 import { useState } from 'react'
 
 import { orpc } from '~/lib/api.ts'
@@ -96,12 +97,15 @@ export function ShootList() {
         <ul className="divide-ink-200 dark:divide-ink-800 divide-y">
           {data.items.map((shoot) => (
             <li key={shoot.id} className="flex items-center gap-3 py-3">
-              <div className="min-w-0 flex-1">
+              <Link
+                href={`/shoots/${shoot.id}`}
+                className="min-w-0 flex-1 transition-opacity hover:opacity-70"
+              >
                 <p className="truncate font-medium">{shoot.name}</p>
                 <p className="text-ink-500 mt-0.5 text-xs">
                   {shoot.shootTypeKey} · {shoot.status}
                 </p>
-              </div>
+              </Link>
 
               <select
                 value={shoot.status}
