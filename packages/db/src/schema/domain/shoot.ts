@@ -1,7 +1,20 @@
-import { index, pgEnum, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import {
+  date,
+  foreignKey,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core'
 
 import { primaryId, softDelete, timestamps, workspaceId } from '../columns.ts'
 import { organization } from '../auth.ts'
+import { campaign } from './campaign.ts'
+import { shootType } from './shoot-type.ts'
 
 /**
  * Shoot — the aggregate root of the planning domain.
@@ -43,13 +56,42 @@ export const shoot = pgTable(
     name: text('name').notNull(),
 
     /**
-     * References `shoot_type.key` from Phase 1 onward. Deliberately a plain
-     * text key rather than an enum so that adding a genre is an INSERT, not a
-     * migration and deploy.
+     * Optional parent. A single sunrise shoot needs no campaign, so this
+     * stays nullable and `shoot` remains the aggregate root.
      */
-    shootTypeKey: text('shoot_type_key').notNull().default('portrait'),
+    campaignId: uuid('campaign_id'),
+
+    /**
+     * References `shoot_type.key`. A text key into a reference TABLE rather
+     * than an enum, so adding a genre is an INSERT rather than a migration.
+     */
+    shootTypeKey: text('shoot_type_key')
+      .notNull()
+      .default('portrait')
+      .references(() => shootType.key, { onUpdate: 'cascade' }),
 
     status: shootStatus('status').notNull().default('draft'),
+
+    /** When the edit is due with the client. A plain date — no time of day. */
+    deliveryDate: date('delivery_date'),
+
+    /**
+     * Genre-specific fields, validated in the application by the shoot-type
+     * registry in `@pof/schemas`.
+     *
+     * Only trivia nothing queries lives here — `{publication, issueDate}` for
+     * editorial, `{skuCount, surfaceFinish}` for product. Anything
+     * cross-genre or filterable is a real column above. When a field in here
+     * proves cross-genre, promote it to a column; that path is what keeps
+     * jsonb from becoming a dumping ground.
+     */
+    details: jsonb('details').notNull().default({}),
+
+    /**
+     * The registry version `details` was written under, so a payload can be
+     * migrated lazily on read instead of in one large backfill.
+     */
+    detailsSchemaVersion: integer('details_schema_version').notNull().default(1),
 
     notes: text('notes'),
 
@@ -68,10 +110,26 @@ export const shoot = pgTable(
     unique('shoot_workspace_id_id_key').on(table.workspaceId, table.id),
 
     /**
+     * Composite FK to campaign: the database rejects a shoot pointing at
+     * another workspace's campaign, rather than relying on the application to
+     * remember.
+     *
+     * `set null` rather than `cascade` — deleting a campaign must not silently
+     * take its shoots with it. Losing a shoot is losing real planning work;
+     * losing its grouping is an inconvenience.
+     */
+    foreignKey({
+      columns: [table.workspaceId, table.campaignId],
+      foreignColumns: [campaign.workspaceId, campaign.id],
+      name: 'shoot_campaign_fk',
+    }).onDelete('set null'),
+
+    /**
      * Supports the default list view (a workspace's shoots, newest first) and
      * the `updatedSince` incremental-sync query the mobile app will use.
      */
     index('shoot_workspace_updated_idx').on(table.workspaceId, table.updatedAt),
+    index('shoot_workspace_campaign_idx').on(table.workspaceId, table.campaignId),
   ],
 )
 

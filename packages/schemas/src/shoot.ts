@@ -36,6 +36,20 @@ export const shootTypeKeySchema = z
 
 const shootName = z.string().trim().min(1, 'Name is required').max(200)
 
+/**
+ * A calendar date with no time of day — a delivery deadline or an issue date.
+ * Kept as a string rather than a Date so it cannot drift across timezones:
+ * "due on the 3rd" must not become the 2nd for a viewer further west.
+ */
+const plainDate = z.string().date()
+
+/**
+ * Genre-specific fields. Validated against the shoot-type registry in the
+ * service layer, where the genre key is known — a schema here cannot do it,
+ * because the right shape depends on a sibling field's value.
+ */
+const detailsInput = z.record(z.string(), z.unknown()).optional()
+
 export const createShootSchema = z.object({
   /**
    * Supplied by the client, not the server — see `newId()`. Optional so a
@@ -46,6 +60,9 @@ export const createShootSchema = z.object({
   name: shootName,
   shootTypeKey: shootTypeKeySchema.default('portrait'),
   status: shootStatusSchema.default('draft'),
+  campaignId: z.uuid().nullable().optional(),
+  deliveryDate: plainDate.nullable().optional(),
+  details: detailsInput,
   notes: z.string().max(10_000).optional(),
 })
 export type CreateShootInput = z.infer<typeof createShootSchema>
@@ -55,6 +72,9 @@ export const updateShootSchema = z.object({
   name: shootName.optional(),
   shootTypeKey: shootTypeKeySchema.optional(),
   status: shootStatusSchema.optional(),
+  campaignId: z.uuid().nullable().optional(),
+  deliveryDate: plainDate.nullable().optional(),
+  details: detailsInput,
   notes: z.string().max(10_000).nullable().optional(),
 })
 export type UpdateShootInput = z.infer<typeof updateShootSchema>
