@@ -60,7 +60,7 @@ export function CampaignList() {
           disabled={!hydrated || create.isPending || !name.trim()}
           className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors disabled:opacity-60"
         >
-          Add
+          Add campaign
         </button>
       </form>
 

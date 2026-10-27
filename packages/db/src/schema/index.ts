@@ -19,10 +19,14 @@ export * from './domain/shoot.ts'
 export * from './domain/campaign.ts'
 export * from './domain/session.ts'
 export * from './domain/shoot-type.ts'
+export * from './domain/crew.ts'
+export * from './domain/gear.ts'
 
 import { campaign } from './domain/campaign.ts'
 import { shootSession } from './domain/session.ts'
 import { shoot } from './domain/shoot.ts'
+import { crewMember } from './domain/crew.ts'
+import { gearItem, shootGear } from './domain/gear.ts'
 
 /**
  * Every workspace-scoped table, keyed by table name.
@@ -38,6 +42,9 @@ export const tenantTables = {
   shoot,
   campaign,
   shootSession,
+  crewMember,
+  gearItem,
+  shootGear,
 } as const
 
 export type TenantTableName = keyof typeof tenantTables

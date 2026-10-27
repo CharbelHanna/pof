@@ -2,6 +2,8 @@ import { shootTypes } from '@pof/core'
 
 import { authed, pub } from './base.ts'
 import { campaignRouter } from './routers/campaign.ts'
+import { crewRouter } from './routers/crew.ts'
+import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
 
@@ -37,6 +39,9 @@ export const router = {
   shoots: shootRouter,
   campaigns: campaignRouter,
   sessions: sessionRouter,
+  crew: crewRouter,
+  gearItems: gearItemRouter,
+  shootGear: shootGearRouter,
 }
 
 export type AppRouter = typeof router

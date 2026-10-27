@@ -2,10 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SHOOT_STATUSES, type ShootStatus } from '@pof/schemas'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 
 import { DynamicFields } from '~/components/dynamic-fields.tsx'
+import { CrewList } from '~/components/crew-list.tsx'
+import { GearList } from '~/components/gear-list.tsx'
 import { SessionList } from '~/components/session-list.tsx'
 import { orpc } from '~/lib/api.ts'
 
@@ -35,16 +37,20 @@ export function ShootDetail({ shootId }: { shootId: string }) {
   )
 
   const shoot = shootQuery.data
-  const [details, setDetails] = useState<Record<string, unknown>>({})
 
   /**
    * Genre fields are edited locally and saved explicitly, unlike the selects
    * above which save on change. Typing into a text field should not fire a
    * mutation per keystroke, and a half-typed value is not worth persisting.
+   *
+   * `null` means "untouched" — the server's values are shown until the user
+   * edits something. Mirroring server state into local state with an effect
+   * looked simpler, but left the form showing stale values whenever a refetch
+   * returned with the same shoot id and genre, since the effect's
+   * dependencies had not changed. Deriving it removes the whole class of bug.
    */
-  useEffect(() => {
-    if (shoot) setDetails((shoot.details ?? {}) as Record<string, unknown>)
-  }, [shoot?.id, shoot?.shootTypeKey])
+  const [draft, setDraft] = useState<Record<string, unknown> | null>(null)
+  const details = draft ?? ((shoot?.details ?? {}) as Record<string, unknown>)
 
   if (shootQuery.isPending) return <p className="text-ink-500 text-sm">Loading…</p>
   if (shootQuery.error)
@@ -143,8 +149,8 @@ export function ShootDetail({ shootId }: { shootId: string }) {
             fields={activeType.fields}
             values={details}
             onChange={(name, value) =>
-              setDetails((previous) => {
-                const next = { ...previous }
+              setDraft((previous) => {
+                const next = { ...(previous ?? details) }
                 // Delete rather than set undefined: the payload is serialised
                 // to JSON, where an undefined value simply vanishes and the
                 // old stored value would survive the save.
@@ -158,7 +164,9 @@ export function ShootDetail({ shootId }: { shootId: string }) {
 
           <button
             type="button"
-            onClick={() => update.mutate({ id: shoot.id, details })}
+            onClick={() =>
+              update.mutate({ id: shoot.id, details }, { onSuccess: () => setDraft(null) })
+            }
             disabled={update.isPending}
             className="bg-accent-600 hover:bg-accent-500 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60"
           >
@@ -174,6 +182,10 @@ export function ShootDetail({ shootId }: { shootId: string }) {
       )}
 
       <SessionList shootId={shoot.id} />
+
+      <CrewList shootId={shoot.id} />
+
+      <GearList shootId={shoot.id} />
     </div>
   )
 }
