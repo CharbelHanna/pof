@@ -32,6 +32,10 @@ export async function insertShoot(
     name: string
     shootTypeKey: string
     status: (typeof schema.shoot.$inferInsert)['status']
+    campaignId?: string | null | undefined
+    deliveryDate?: string | null | undefined
+    details?: Record<string, unknown> | undefined
+    detailsSchemaVersion?: number | undefined
     notes?: string | undefined
   },
 ) {
@@ -43,6 +47,10 @@ export async function insertShoot(
       name: values.name,
       shootTypeKey: values.shootTypeKey,
       status: values.status,
+      campaignId: values.campaignId ?? null,
+      deliveryDate: values.deliveryDate ?? null,
+      details: values.details ?? {},
+      detailsSchemaVersion: values.detailsSchemaVersion ?? 1,
       notes: values.notes ?? null,
     })
     /**
@@ -124,12 +132,7 @@ export async function updateShoot(
   tx: TenantDb,
   workspaceId: string,
   id: string,
-  patch: Partial<{
-    name: string
-    shootTypeKey: string
-    status: (typeof schema.shoot.$inferInsert)['status']
-    notes: string | null
-  }>,
+  patch: Record<string, unknown>,
 ) {
   const [row] = await tx
     .update(shoot)

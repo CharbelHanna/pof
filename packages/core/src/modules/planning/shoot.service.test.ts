@@ -265,3 +265,109 @@ describe('deleteShoot', () => {
     await expect(shoots.deleteShoot(db, ctx, created.id)).rejects.toThrow(NotFoundError)
   })
 })
+
+describe('genre-specific details', () => {
+  it('stores fields the genre defines', async () => {
+    const ctx = await newWorkspace()
+
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Autumn editorial',
+      shootTypeKey: 'editorial',
+      status: 'draft',
+      details: { publication: 'Vogue Italia', lookCount: 4 },
+    })
+
+    expect(created.details).toEqual({ publication: 'Vogue Italia', lookCount: 4 })
+    expect(created.detailsSchemaVersion).toBe(1)
+  })
+
+  it('rejects a value the genre does not allow', async () => {
+    const ctx = await newWorkspace()
+
+    await expect(
+      shoots.createShoot(db, ctx, {
+        name: 'Bad product shoot',
+        shootTypeKey: 'product',
+        status: 'draft',
+        details: { surfaceFinish: 'holographic' },
+      }),
+    ).rejects.toThrow()
+  })
+
+  it('strips fields belonging to a different genre', async () => {
+    const ctx = await newWorkspace()
+
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Portrait with stray data',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+      details: { subjectCount: 2, publication: 'Wired' },
+    })
+
+    expect(created.details).toEqual({ subjectCount: 2 })
+  })
+
+  it('drops the old genre fields when the genre changes', async () => {
+    const ctx = await newWorkspace()
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Changing its mind',
+      shootTypeKey: 'editorial',
+      status: 'draft',
+      details: { publication: 'Wired', lookCount: 2 },
+    })
+
+    // Switching genre without supplying new details must not leave
+    // `publication` behind: no form would render it and no schema would
+    // accept it, so it would fail validation on the next unrelated edit.
+    const changed = await shoots.updateShoot(db, ctx, {
+      id: created.id,
+      shootTypeKey: 'product',
+    })
+
+    expect(changed.shootTypeKey).toBe('product')
+    expect(changed.details).toEqual({})
+  })
+
+  it('accepts new details supplied alongside a genre change', async () => {
+    const ctx = await newWorkspace()
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Retargeted',
+      shootTypeKey: 'editorial',
+      status: 'draft',
+      details: { publication: 'Wired' },
+    })
+
+    const changed = await shoots.updateShoot(db, ctx, {
+      id: created.id,
+      shootTypeKey: 'product',
+      details: { skuCount: 42, surfaceFinish: 'matte' },
+    })
+
+    expect(changed.details).toEqual({ skuCount: 42, surfaceFinish: 'matte' })
+  })
+
+  it('leaves details untouched when an unrelated field is edited', async () => {
+    const ctx = await newWorkspace()
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Stable',
+      shootTypeKey: 'landscape',
+      status: 'draft',
+      details: { hikeMinutes: 90, permitRequired: true },
+    })
+
+    const renamed = await shoots.updateShoot(db, ctx, { id: created.id, name: 'Renamed' })
+
+    expect(renamed.details).toEqual({ hikeMinutes: 90, permitRequired: true })
+  })
+
+  it('defaults to an empty object when no details are given', async () => {
+    const ctx = await newWorkspace()
+    const created = await shoots.createShoot(db, ctx, {
+      name: 'Plain',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+    })
+
+    expect(created.details).toEqual({})
+  })
+})

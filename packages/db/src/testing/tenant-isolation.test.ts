@@ -115,16 +115,16 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
   let rowB: string
 
   beforeAll(async () => {
-    const [insertedA] = await withTenant(db, ctx(a()), (tx) =>
+    const [insertedA] = await withTenant(db, ctx(a()), async (tx) =>
       tx
         .insert(table)
-        .values(seed(a()) as never)
+        .values((await seed(a(), tx)) as never)
         .returning({ id: table.id }),
     )
-    const [insertedB] = await withTenant(db, ctx(b()), (tx) =>
+    const [insertedB] = await withTenant(db, ctx(b()), async (tx) =>
       tx
         .insert(table)
-        .values(seed(b()) as never)
+        .values((await seed(b(), tx)) as never)
         .returning({ id: table.id }),
     )
 
@@ -178,8 +178,15 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
   it('refuses to write a row into another workspace', async () => {
     // WITH CHECK, not just USING. Without it a tenant could insert rows into a
     // workspace it cannot read — invisible to them, corrupting for the victim.
+    //
+    // B's values are prepared in B's OWN context first. Building them inside
+    // A's transaction would trip the policy on a prerequisite row (a session
+    // needs a parent shoot), so the test would pass for the wrong reason and
+    // never exercise the insert it names.
+    const foreignValues = await withTenant(db, ctx(b()), (tx) => seed(b(), tx))
+
     const error = await withTenant(db, ctx(a()), (tx) =>
-      tx.insert(table).values(seed(b()) as never),
+      tx.insert(table).values(foreignValues as never),
     ).then(
       () => null,
       (caught: unknown) => caught,
