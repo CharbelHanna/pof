@@ -57,7 +57,7 @@ export default defineConfig({
    * This buys patience, not correctness: a genuinely broken assertion still
    * fails, just 10s later.
    */
-  expect: { timeout: 10_000 },
+  expect: { timeout: 15_000 },
 
   use: {
     baseURL: 'http://localhost:3100',

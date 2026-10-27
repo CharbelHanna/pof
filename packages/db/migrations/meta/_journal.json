@@ -36,6 +36,20 @@
       "when": 1793037444680,
       "tag": "0004_phase1_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793123241800,
+      "tag": "0005_thin_blacklash",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793123252698,
+      "tag": "0006_crew_gear_rls_and_boudoir",
+      "breakpoints": true
     }
   ]
 }

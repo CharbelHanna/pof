@@ -84,6 +84,15 @@ export const shootSession = pgTable(
 
     unique('shoot_session_workspace_id_id_key').on(table.workspaceId, table.id),
 
+    /**
+     * Target for composite foreign keys that need a session to belong to a
+     * specific SHOOT, not merely to the same workspace — crew assigned to one
+     * session of a shoot, and the shot lists and checklists of later phases.
+     * Without `shoot_id` in the key, those references could point at a
+     * session of a different shoot in the same workspace.
+     */
+    unique('shoot_session_workspace_shoot_id_key').on(table.workspaceId, table.shootId, table.id),
+
     // Supports the shoot detail view and `updatedSince` incremental sync.
     index('shoot_session_workspace_shoot_idx').on(table.workspaceId, table.shootId),
     index('shoot_session_workspace_updated_idx').on(table.workspaceId, table.updatedAt),

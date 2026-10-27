@@ -165,12 +165,58 @@ const product = {
   ],
 } satisfies ShootTypeDefinition
 
+const boudoir = {
+  key: 'boudoir',
+  label: 'Boudoir',
+  description: 'Intimate portraiture, where privacy and comfort shape the whole day.',
+  version: 1,
+  detailsSchema: z.object({
+    locationType: z.enum(['studio', 'hotel', 'client_home', 'other']).optional(),
+    chaperonePresent: z.boolean().optional(),
+    wardrobeNotes: longText.optional(),
+    hairMakeupArtist: shortText.optional(),
+    comfortNotes: longText.optional(),
+  }),
+  fields: [
+    {
+      name: 'locationType',
+      label: 'Location type',
+      widget: 'select',
+      help: 'Changes what you bring and how long setup takes.',
+      options: [
+        { value: 'studio', label: 'Studio' },
+        { value: 'hotel', label: 'Hotel suite' },
+        { value: 'client_home', label: "Client's home" },
+        { value: 'other', label: 'Other' },
+      ],
+    },
+    {
+      name: 'chaperonePresent',
+      label: 'Chaperone or support person attending',
+      widget: 'toggle',
+    },
+    { name: 'wardrobeNotes', label: 'Wardrobe notes', widget: 'textarea' },
+    { name: 'hairMakeupArtist', label: 'Hair and makeup artist', widget: 'text' },
+    {
+      name: 'comfortNotes',
+      label: 'Comfort and boundaries',
+      widget: 'textarea',
+      help: 'Anything agreed in advance about posing, coverage or who is in the room.',
+    },
+  ],
+} satisfies ShootTypeDefinition
+
 /**
  * Genres shipped with the product. A workspace can add its own later (V2) —
  * `shoot_type` is a table, so that is an INSERT plus a definition supplied at
  * runtime, not a change here.
+ *
+ * NOTE on boudoir: these fields help plan the day, but the application has no
+ * model for image-usage CONSENT, which is a legal matter rather than a note.
+ * `comfortNotes` is a planning aid and must not be mistaken for a release.
+ * See BACKLOG.md — consent is tracked as its own item.
  */
-export const SYSTEM_SHOOT_TYPES = { portrait, editorial, landscape, product } as const
+export const SYSTEM_SHOOT_TYPES = { portrait, editorial, landscape, product, boudoir } as const
 
 export type SystemShootTypeKey = keyof typeof SYSTEM_SHOOT_TYPES
 

@@ -48,51 +48,31 @@ anyway.
 
 ---
 
-## Boudoir shoot type
+## Location search with real coordinates
 
-Add boudoir as a genre, alongside portrait, editorial, landscape and product.
+Attach a location to a shoot, chosen through a place search rather than typed
+as free text.
 
-_(Spelling: the photography term is **boudoir** — the French noun. "Boudoire"
-is not a word, and the key is user-visible in URLs and the API, so it is worth
-getting right once rather than migrating later.)_
+**Planned for Phase 5**, together with sun and weather. Recording the specific
+requirement here because it changes what Phase 5 can deliver:
 
-**The mechanical part is genuinely small.** This is exactly what the Phase 1
-shoot-type registry was built for: a row in `shoot_type` and a definition in
-`packages/schemas/src/shoot-types/registry.ts`. No migration, no component
-change, no deploy coupling — the form renders whatever the registry describes,
-and the registry-integrity test covers the new entry automatically.
+**Coordinates are not a nice-to-have — they are the whole feature.** Golden
+hour, blue hour and sunrise/sunset are computed from latitude, longitude and
+date. A free-text address like "Glen Coe" cannot produce any of them. So the
+location field has to resolve to real coordinates at the point of entry, which
+means a geocoding search rather than a text box.
 
-Candidate genre fields, in the same spirit as the others (trivia nothing
-queries — anything cross-genre belongs in a real column):
+This matters most for landscape work, where the light window _is_ the plan, but
+it applies to any outdoor session.
 
-- wardrobe notes
-- hair and makeup artist
-- location type — studio, hotel, client's home
-- whether a chaperone or support person will be present
+**Worth deciding when picked up.**
 
-**The part worth thinking about before building it.**
-
-Boudoir is not simply "portrait with different fields". It carries privacy,
-consent and safeguarding expectations the product currently has no concept of:
-
-- **Image usage consent is a legal matter, not a note.** A client may agree to
-  a private gallery only, to portfolio use with per-image approval, or to a
-  full release — and that decision needs to be recorded, dated, and hard to
-  change silently. A free-text field inside `details` jsonb is the wrong home
-  for something that may need to be produced as evidence.
-- **Confidentiality cuts across features that do not exist yet.** Moodboards
-  (Phase 2) and any future client sharing would need a notion of "this shoot
-  is private" that currently has no representation anywhere.
-- **It affects defaults, not just fields.** A boudoir shoot probably should
-  not inherit the same sharing or portfolio-use defaults as a product shoot.
-
-So the honest sizing is: **adding the genre is an afternoon; doing it
-responsibly surfaces a consent/privacy model the application does not have.**
-Those can be separated — ship the genre first and treat consent as its own
-item — but shipping the genre while implying the app handles consent would be
-worse than not having it.
-
-Worth deciding when picked up: whether consent becomes a first-class concept
-with its own table and audit trail (likely the right answer, and useful for
-model releases in every genre), or stays out of scope with the limitation
-stated plainly in the UI.
+- Which geocoding provider, and under what licence. The same trap as weather:
+  several are free for non-commercial use only. Nominatim (OpenStreetMap) is
+  free with a usage policy; Photon and MapTiler are alternatives. It belongs
+  behind a port like `WeatherPort`, so the choice is reversible.
+- Coordinates should be stored on the shoot and session regardless of which
+  provider found them, so the sun calculation never depends on a third party
+  being reachable. SunCalc runs locally with no API at all.
+- Locations are worth reusing — a photographer returns to the same places —
+  which is why the plan already has a `location` table rather than a column.

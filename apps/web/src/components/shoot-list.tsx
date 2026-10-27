@@ -31,6 +31,7 @@ export function ShootList({ campaignId }: { campaignId?: string } = {}) {
   }
 
   const { data, isPending, error } = useQuery(orpc.shoots.list.queryOptions({ input: listInput }))
+  const shootTypesQuery = useQuery(orpc.shootTypes.list.queryOptions({ input: {} }))
   const campaignsQuery = useQuery(
     orpc.campaigns.list.queryOptions({ input: { limit: 100, includeDeleted: false } }),
   )
@@ -89,11 +90,13 @@ export function ShootList({ campaignId }: { campaignId?: string } = {}) {
           aria-label="Shoot type"
           className={controlClass}
         >
-          {/* Phase 1 replaces this with the seeded shoot-type registry, so
-              adding a genre becomes an INSERT rather than a code change. */}
-          {['portrait', 'editorial', 'landscape', 'product'].map((key) => (
-            <option key={key} value={key}>
-              {key}
+          {/* From the server's shoot-type list, never a hardcoded array.
+              A hardcoded list silently omits any genre added later — which
+              is exactly what happened to boudoir, making the reference table
+              and its registry pointless from this form. */}
+          {shootTypesQuery.data?.map((type) => (
+            <option key={type.key} value={type.key}>
+              {type.label}
             </option>
           ))}
         </select>
@@ -121,7 +124,7 @@ export function ShootList({ campaignId }: { campaignId?: string } = {}) {
           disabled={!hydrated || create.isPending || !name.trim()}
           className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors disabled:opacity-60"
         >
-          Add
+          Add shoot
         </button>
       </form>
 

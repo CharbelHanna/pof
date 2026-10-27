@@ -60,10 +60,26 @@ async function openShoot(page: Page, name: string): Promise<void> {
   await expect(page).toHaveURL(/\/shoots\/[0-9a-f-]+$/)
 }
 
+/**
+ * Save genre details and wait for the write to land.
+ *
+ * Clicking and reloading straight away races the request: the navigation
+ * cancels the in-flight mutation, nothing is persisted, and the reloaded page
+ * shows empty fields — which reads like the save is broken rather than like
+ * the test is impatient.
+ */
+async function saveDetails(page: Page): Promise<void> {
+  const saved = page.waitForResponse(
+    (response) => response.url().includes('/shoots/update') && response.ok(),
+  )
+  await page.getByRole('button', { name: 'Save details' }).click()
+  await saved
+}
+
 async function createShoot(page: Page, name: string, type = 'portrait'): Promise<void> {
   await page.getByLabel('Shoot name').fill(name)
   await page.getByLabel('Shoot type').selectOption(type)
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add shoot' }).click()
   await expect(page.getByText(name)).toBeVisible()
 }
 
@@ -91,7 +107,7 @@ test('genre details are saved and survive a reload', async ({ page }) => {
 
   await page.getByLabel('Publication').fill('Vogue Italia')
   await page.getByLabel('Number of looks').fill('4')
-  await page.getByRole('button', { name: 'Save details' }).click()
+  await saveDetails(page)
 
   await page.reload()
   await expect(page.getByLabel('Publication')).toHaveValue('Vogue Italia')
@@ -103,7 +119,7 @@ test('a shoot can be grouped into a campaign, and survives its deletion', async 
 
   await gotoCampaigns(page)
   await page.getByLabel('Campaign name').fill('Autumn/Winter 27')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add campaign' }).click()
   await expect(page.getByText('Autumn/Winter 27')).toBeVisible()
 
   await page.goto('/shoots')
@@ -133,12 +149,12 @@ test('a multi-session shoot shows its sessions in the shoot and the agenda', asy
   await page.getByLabel('Session name').fill('Studio day')
   await page.getByLabel('Session start').fill('2027-06-21T09:00')
   await page.getByLabel('Session length in hours').selectOption('6')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add session' }).click()
   await expect(page.getByText('Studio day')).toBeVisible()
 
   await page.getByLabel('Session name').fill('Rooftop golden hour')
   await page.getByLabel('Session start').fill('2027-06-21T20:30')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add session' }).click()
   await expect(page.getByText('Rooftop golden hour')).toBeVisible()
 
   // Rendered in the session's zone, not the browser's — the whole reason the
@@ -159,7 +175,7 @@ test('a session spans the duration that was chosen', async ({ page }) => {
   await page.getByLabel('Session name').fill('Four hour block')
   await page.getByLabel('Session start').fill('2027-06-21T09:00')
   await page.getByLabel('Session length in hours').selectOption('4')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add session' }).click()
 
   await expect(page.getByText('Four hour block')).toBeVisible()
   await expect(page.getByText(/09:00–13:00/)).toBeVisible()
@@ -174,13 +190,13 @@ test('a shoot can be assigned to a campaign at creation', async ({ page }) => {
 
   await gotoCampaigns(page)
   await page.getByLabel('Campaign name').fill('Spring 27')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add campaign' }).click()
   await expect(page.getByText('Spring 27')).toBeVisible()
 
   await page.goto('/shoots')
   await page.getByLabel('Shoot name').fill('Born grouped')
   await page.getByLabel('Campaign for new shoot').selectOption({ label: 'Spring 27' })
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add shoot' }).click()
 
   // The grouping must be visible from the list itself — otherwise it is only
   // discoverable by opening each shoot in turn, which makes it useless.
@@ -192,18 +208,18 @@ test('the shoot list can be filtered by campaign', async ({ page }) => {
 
   await gotoCampaigns(page)
   await page.getByLabel('Campaign name').fill('Filtered')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add campaign' }).click()
   await expect(page.getByText('Filtered')).toBeVisible()
 
   await page.goto('/shoots')
   await page.getByLabel('Shoot name').fill('Grouped shoot')
   await page.getByLabel('Campaign for new shoot').selectOption({ label: 'Filtered' })
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add shoot' }).click()
   await expect(page.getByText('Grouped shoot')).toBeVisible()
 
   await page.getByLabel('Shoot name').fill('Loose shoot')
   await page.getByLabel('Campaign for new shoot').selectOption('')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add shoot' }).click()
   await expect(page.getByText('Loose shoot')).toBeVisible()
 
   await page.getByLabel('Filter by campaign').selectOption({ label: 'Filtered' })
@@ -220,7 +236,7 @@ test('a campaign can be opened and shows its shoots', async ({ page }) => {
 
   await gotoCampaigns(page)
   await page.getByLabel('Campaign name').fill('Openable')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add campaign' }).click()
   await expect(page.getByText('Openable')).toBeVisible()
 
   await page.getByRole('link', { name: /Openable/ }).click()
@@ -229,7 +245,7 @@ test('a campaign can be opened and shows its shoots', async ({ page }) => {
 
   // A shoot created from inside a campaign is filed under it automatically.
   await page.getByLabel('Shoot name').fill('Made from inside')
-  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Add shoot' }).click()
   await expect(page.getByText('Made from inside')).toBeVisible()
 
   await page.goto('/shoots')
@@ -257,4 +273,85 @@ test('a session can be scheduled from the agenda', async ({ page }) => {
 
   await expect(page.getByText('Planned from agenda')).toBeVisible()
   await expect(page.getByText(/08:00–10:00/)).toBeVisible()
+})
+
+test('boudoir is selectable and brings its own fields', async ({ page }) => {
+  await signUp(page)
+  await createShoot(page, 'Boudoir session', 'boudoir')
+  await openShoot(page, 'Boudoir session')
+
+  // Added as a row in shoot_type plus a registry definition — no component
+  // here knows the genre exists.
+  await expect(page.getByLabel('Location type')).toBeVisible()
+  await expect(page.getByLabel('Chaperone or support person attending')).toBeVisible()
+
+  await page.getByLabel('Location type').selectOption('hotel')
+  await page.getByLabel('Hair and makeup artist').fill('Jo')
+  await saveDetails(page)
+
+  await page.reload()
+  await expect(page.getByLabel('Location type')).toHaveValue('hotel')
+  await expect(page.getByLabel('Hair and makeup artist')).toHaveValue('Jo')
+})
+
+test('crew can be added to a shoot', async ({ page }) => {
+  await signUp(page)
+  await createShoot(page, 'Crewed shoot')
+  await openShoot(page, 'Crewed shoot')
+
+  await page.getByLabel('Crew role').fill('Assistant')
+  await page.getByLabel('Crew name').fill('Sam')
+  await page.getByRole('button', { name: 'Add crew' }).click()
+
+  await expect(page.getByText('Sam')).toBeVisible()
+  await expect(page.getByText('1 person')).toBeVisible()
+
+  // A role nobody anticipated must still work — crew roles are free text.
+  await page.getByLabel('Crew role').fill('Dog handler')
+  await page.getByRole('button', { name: 'Add crew' }).click()
+  await expect(page.getByText('Dog handler')).toBeVisible()
+  await expect(page.getByText('2 people')).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByText('Sam')).toBeVisible()
+})
+
+test('gear is added to the library and packed off', async ({ page }) => {
+  await signUp(page)
+  await createShoot(page, 'Geared shoot')
+  await openShoot(page, 'Geared shoot')
+
+  // New kit joins the library and this shoot in one step.
+  await page.getByLabel('New gear name').fill('85mm f/1.4')
+  await page.getByLabel('New gear category').fill('Lens')
+  await page.getByRole('button', { name: 'Add new' }).click()
+
+  await expect(page.getByText('85mm f/1.4')).toBeVisible()
+  await expect(page.getByText('0 of 1 packed')).toBeVisible()
+
+  await page.getByLabel('Packed: 85mm f/1.4').click()
+  await expect(page.getByText('1 of 1 packed')).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByLabel('Packed: 85mm f/1.4')).toBeChecked()
+})
+
+test('library kit is reusable across shoots', async ({ page }) => {
+  await signUp(page)
+
+  await createShoot(page, 'First shoot')
+  await openShoot(page, 'First shoot')
+  await page.getByLabel('New gear name').fill('Tripod')
+  await page.getByRole('button', { name: 'Add new' }).click()
+  await expect(page.getByText('Tripod')).toBeVisible()
+
+  await page.goto('/shoots')
+  await createShoot(page, 'Second shoot')
+  await openShoot(page, 'Second shoot')
+
+  // The whole point of a library rather than free text: "my tripod" is one
+  // thing, selectable again without retyping.
+  await page.getByLabel('Gear from library').selectOption({ index: 1 })
+  await page.getByRole('button', { name: 'Add gear' }).click()
+  await expect(page.getByText('Tripod')).toBeVisible()
 })
