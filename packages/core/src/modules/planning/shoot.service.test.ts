@@ -6,6 +6,7 @@ import { newId } from '@pof/schemas'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { NotFoundError } from '../../errors.ts'
+import * as campaigns from './campaign.service.ts'
 import * as shoots from './shoot.service.ts'
 
 /**
@@ -369,5 +370,75 @@ describe('genre-specific details', () => {
     })
 
     expect(created.details).toEqual({})
+  })
+})
+
+describe('filtering shoots by campaign', () => {
+  it('returns only shoots in the given campaign', async () => {
+    const ctx = await newWorkspace()
+    const campaign = await campaigns.createCampaign(db, ctx, { name: 'Group', status: 'active' })
+
+    await shoots.createShoot(db, ctx, {
+      name: 'In campaign',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+      campaignId: campaign.id,
+    })
+    await shoots.createShoot(db, ctx, {
+      name: 'Loose',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+    })
+
+    const filtered = await shoots.listShoots(db, ctx, {
+      campaignId: campaign.id,
+      limit: 50,
+      includeDeleted: false,
+    })
+
+    expect(filtered.items.map((s) => s.name)).toEqual(['In campaign'])
+  })
+
+  it("returns only ungrouped shoots for 'none'", async () => {
+    const ctx = await newWorkspace()
+    const campaign = await campaigns.createCampaign(db, ctx, { name: 'Group', status: 'active' })
+
+    await shoots.createShoot(db, ctx, {
+      name: 'In campaign',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+      campaignId: campaign.id,
+    })
+    await shoots.createShoot(db, ctx, {
+      name: 'Loose',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+    })
+
+    // Distinct from "no filter" — over REST an empty query value and an
+    // absent one look identical, so the sentinel carries the intent.
+    const filtered = await shoots.listShoots(db, ctx, {
+      campaignId: 'none',
+      limit: 50,
+      includeDeleted: false,
+    })
+
+    expect(filtered.items.map((s) => s.name)).toEqual(['Loose'])
+  })
+
+  it('returns everything when no campaign filter is given', async () => {
+    const ctx = await newWorkspace()
+    const campaign = await campaigns.createCampaign(db, ctx, { name: 'Group', status: 'active' })
+
+    await shoots.createShoot(db, ctx, {
+      name: 'In campaign',
+      shootTypeKey: 'portrait',
+      status: 'draft',
+      campaignId: campaign.id,
+    })
+    await shoots.createShoot(db, ctx, { name: 'Loose', shootTypeKey: 'portrait', status: 'draft' })
+
+    const all = await shoots.listShoots(db, ctx, { limit: 50, includeDeleted: false })
+    expect(all.items).toHaveLength(2)
   })
 })

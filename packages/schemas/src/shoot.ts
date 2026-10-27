@@ -97,7 +97,19 @@ export type UpdateShootInput = z.infer<typeof updateShootSchema>
 const queryNumber = z.coerce.number()
 const queryBoolean = z.union([z.boolean(), z.stringbool()])
 
+/**
+ * Filter the list by campaign.
+ *
+ * Three states, not two: a specific campaign, explicitly ungrouped shoots, or
+ * no filter at all. `'none'` is a deliberate sentinel rather than `null` —
+ * over the REST surface every query value is a string, so `?campaignId=` and
+ * an absent parameter are indistinguishable, and "shoots in no campaign" is a
+ * question people genuinely ask.
+ */
+export const campaignFilterSchema = z.union([z.uuid(), z.literal('none')])
+
 export const listShootsSchema = z.object({
+  campaignId: campaignFilterSchema.optional(),
   /**
    * Keyset pagination, never OFFSET. Deep OFFSET degrades badly once a
    * workspace has real history, and a cursor is also what incremental sync

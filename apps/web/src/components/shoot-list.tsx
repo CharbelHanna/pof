@@ -6,40 +6,60 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { orpc } from '~/lib/api.ts'
+import { useHydrated } from '~/lib/use-hydrated.ts'
 
 /**
- * The Phase 0 end-to-end slice: create, list, rename and soft-delete a shoot.
+ * The shoot list.
  *
- * Everything here goes through the oRPC client, which means it travels the
- * same path the Expo app will: procedure → service → withTenant → RLS. No
- * business rules live in this component.
+ * Shows which campaign each shoot belongs to, and can be filtered by one.
+ * Without that, campaign membership was only visible by opening each shoot in
+ * turn — which made the grouping effectively invisible and the feature
+ * pointless from here.
  */
-export function ShootList() {
+export function ShootList({ campaignId }: { campaignId?: string } = {}) {
   const queryClient = useQueryClient()
-  const listOptions = orpc.shoots.list.queryOptions({
-    input: { limit: 50, includeDeleted: false },
-  })
 
-  const { data, isPending, error } = useQuery(listOptions)
+  // When rendered inside a campaign the filter is fixed and its control is
+  // hidden; the surrounding page has already said which campaign this is.
+  const [filter, setFilter] = useState<string>(campaignId ?? '')
+  const activeFilter = campaignId ?? filter
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: orpc.shoots.list.key() })
+  const listInput = {
+    limit: 50,
+    includeDeleted: false,
+    ...(activeFilter ? { campaignId: activeFilter as string } : {}),
+  }
+
+  const { data, isPending, error } = useQuery(orpc.shoots.list.queryOptions({ input: listInput }))
+  const campaignsQuery = useQuery(
+    orpc.campaigns.list.queryOptions({ input: { limit: 100, includeDeleted: false } }),
+  )
+
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: orpc.shoots.list.key() })
 
   const create = useMutation(orpc.shoots.create.mutationOptions({ onSuccess: invalidate }))
   const remove = useMutation(orpc.shoots.delete.mutationOptions({ onSuccess: invalidate }))
-  const rename = useMutation(orpc.shoots.update.mutationOptions({ onSuccess: invalidate }))
+  const update = useMutation(orpc.shoots.update.mutationOptions({ onSuccess: invalidate }))
 
+  const hydrated = useHydrated()
   const [name, setName] = useState('')
   const [shootTypeKey, setShootTypeKey] = useState('portrait')
+  const [newCampaignId, setNewCampaignId] = useState(campaignId ?? '')
+
+  const campaignName = (id: string | null) =>
+    id ? campaignsQuery.data?.items.find((c) => c.id === id)?.name : undefined
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-2xl font-semibold tracking-tight">Shoots</h1>
-        <p className="text-ink-500 mt-1 text-sm">Everything you are preparing for.</p>
-      </section>
+    <div className="space-y-6">
+      {!campaignId && (
+        <section>
+          <h1 className="text-2xl font-semibold tracking-tight">Shoots</h1>
+          <p className="text-ink-500 mt-1 text-sm">Everything you are preparing for.</p>
+        </section>
+      )}
 
       <form
-        className="flex flex-col gap-2 sm:flex-row"
+        className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]"
         onSubmit={(event) => {
           event.preventDefault()
           if (!name.trim()) return
@@ -51,6 +71,7 @@ export function ShootList() {
             name: name.trim(),
             shootTypeKey,
             status: 'draft',
+            ...(newCampaignId ? { campaignId: newCampaignId } : {}),
           })
           setName('')
         }}
@@ -60,13 +81,13 @@ export function ShootList() {
           onChange={(event) => setName(event.target.value)}
           placeholder="Name your next shoot"
           aria-label="Shoot name"
-          className="border-ink-200 dark:border-ink-700 dark:bg-ink-900 focus:border-accent-500 flex-1 rounded-lg border bg-white px-3 py-2.5 text-base outline-none"
+          className={controlClass}
         />
         <select
           value={shootTypeKey}
           onChange={(event) => setShootTypeKey(event.target.value)}
           aria-label="Shoot type"
-          className="border-ink-200 dark:border-ink-700 dark:bg-ink-900 rounded-lg border bg-white px-3 py-2.5 text-base"
+          className={controlClass}
         >
           {/* Phase 1 replaces this with the seeded shoot-type registry, so
               adding a genre becomes an INSERT rather than a code change. */}
@@ -76,18 +97,57 @@ export function ShootList() {
             </option>
           ))}
         </select>
+
+        {/* Assigning a campaign at creation, not only afterwards on the
+            detail page — grouping a shoot is part of planning it. */}
+        {!campaignId && (
+          <select
+            value={newCampaignId}
+            onChange={(event) => setNewCampaignId(event.target.value)}
+            aria-label="Campaign for new shoot"
+            className={controlClass}
+          >
+            <option value="">No campaign</option>
+            {campaignsQuery.data?.items.map((campaign) => (
+              <option key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         <button
           type="submit"
-          disabled={create.isPending || !name.trim()}
+          disabled={!hydrated || create.isPending || !name.trim()}
           className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors disabled:opacity-60"
         >
           Add
         </button>
       </form>
 
-      {error && (
+      {!campaignId && (campaignsQuery.data?.items.length ?? 0) > 0 && (
+        <label className="flex items-center gap-2">
+          <span className="text-ink-500 text-sm">Show</span>
+          <select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            aria-label="Filter by campaign"
+            className="border-ink-200 dark:border-ink-700 dark:bg-ink-900 focus:border-accent-500 rounded-lg border bg-white px-3 py-1.5 text-sm outline-none"
+          >
+            <option value="">All shoots</option>
+            <option value="none">Not in a campaign</option>
+            {campaignsQuery.data?.items.map((campaign) => (
+              <option key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {(error ?? create.error) && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {error.message}
+          {(error ?? create.error)?.message}
         </p>
       )}
 
@@ -104,6 +164,7 @@ export function ShootList() {
                 <p className="truncate font-medium">{shoot.name}</p>
                 <p className="text-ink-500 mt-0.5 text-xs">
                   {shoot.shootTypeKey} · {shoot.status}
+                  {campaignName(shoot.campaignId) && <> · {campaignName(shoot.campaignId)}</>}
                 </p>
               </Link>
 
@@ -111,7 +172,7 @@ export function ShootList() {
                 value={shoot.status}
                 aria-label={`Status for ${shoot.name}`}
                 onChange={(event) =>
-                  rename.mutate({ id: shoot.id, status: event.target.value as ShootStatus })
+                  update.mutate({ id: shoot.id, status: event.target.value as ShootStatus })
                 }
                 className="border-ink-200 dark:border-ink-700 dark:bg-ink-900 rounded-md border bg-white px-2 py-1.5 text-sm"
               >
@@ -134,8 +195,15 @@ export function ShootList() {
           ))}
         </ul>
       ) : (
-        <p className="text-ink-500 text-sm">No shoots yet. Add your first one above.</p>
+        <p className="text-ink-500 text-sm">
+          {activeFilter
+            ? 'No shoots match this filter.'
+            : 'No shoots yet. Add your first one above.'}
+        </p>
       )}
     </div>
   )
 }
+
+const controlClass =
+  'border-ink-200 dark:border-ink-700 dark:bg-ink-900 w-full rounded-lg border bg-white px-3 py-2.5 text-base outline-none focus:border-accent-500'

@@ -79,6 +79,16 @@ export async function findShootById(tx: TenantDb, workspaceId: string, id: strin
 export async function listShoots(tx: TenantDb, workspaceId: string, input: ListShootsInput) {
   const predicates: (SQL | undefined)[] = [visibility(workspaceId, input.includeDeleted)]
 
+  if (input.campaignId) {
+    // `'none'` means "not in any campaign" — a real question, and distinct
+    // from "no filter applied". See campaignFilterSchema.
+    predicates.push(
+      input.campaignId === 'none'
+        ? isNull(shoot.campaignId)
+        : eq(shoot.campaignId, input.campaignId),
+    )
+  }
+
   // Keyset pagination, never OFFSET: deep offsets degrade badly once a
   // workspace has real history. Ordering by the v7 primary key works because
   // v7 is time-ordered, so it doubles as a stable creation-order cursor

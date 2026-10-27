@@ -5,6 +5,7 @@ import { SESSION_STATUSES, newId, type SessionStatus } from '@pof/schemas'
 import { useState } from 'react'
 
 import { orpc } from '~/lib/api.ts'
+import { useHydrated } from '~/lib/use-hydrated.ts'
 import { formatSessionTime, localInputValue, toInstant, browserTimezone } from '~/lib/time.ts'
 
 /** Sessions belonging to one shoot, with inline creation. */
@@ -21,6 +22,7 @@ export function SessionList({ shootId }: { shootId: string }) {
   const update = useMutation(orpc.sessions.update.mutationOptions({ onSuccess: invalidate }))
   const remove = useMutation(orpc.sessions.delete.mutationOptions({ onSuccess: invalidate }))
 
+  const hydrated = useHydrated()
   const [name, setName] = useState('')
   const [startsAtLocal, setStartsAtLocal] = useState('')
   const [hours, setHours] = useState(2)
@@ -85,7 +87,7 @@ export function SessionList({ shootId }: { shootId: string }) {
         </select>
         <button
           type="submit"
-          disabled={create.isPending || !name.trim() || !startsAtLocal}
+          disabled={!hydrated || create.isPending || !name.trim() || !startsAtLocal}
           className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors disabled:opacity-60"
         >
           Add

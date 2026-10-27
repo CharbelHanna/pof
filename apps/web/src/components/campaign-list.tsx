@@ -2,9 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CAMPAIGN_STATUSES, newId, type CampaignStatus } from '@pof/schemas'
+import Link from 'next/link'
 import { useState } from 'react'
 
 import { orpc } from '~/lib/api.ts'
+import { useHydrated } from '~/lib/use-hydrated.ts'
 
 /**
  * Campaigns — an optional grouping of shoots.
@@ -25,6 +27,7 @@ export function CampaignList() {
   const update = useMutation(orpc.campaigns.update.mutationOptions({ onSuccess: invalidate }))
   const remove = useMutation(orpc.campaigns.delete.mutationOptions({ onSuccess: invalidate }))
 
+  const hydrated = useHydrated()
   const [name, setName] = useState('')
 
   return (
@@ -54,7 +57,7 @@ export function CampaignList() {
         />
         <button
           type="submit"
-          disabled={create.isPending || !name.trim()}
+          disabled={!hydrated || create.isPending || !name.trim()}
           className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors disabled:opacity-60"
         >
           Add
@@ -73,7 +76,17 @@ export function CampaignList() {
         <ul className="divide-ink-200 dark:divide-ink-800 divide-y">
           {data.items.map((campaign) => (
             <li key={campaign.id} className="flex items-center gap-3 py-3">
-              <p className="min-w-0 flex-1 truncate font-medium">{campaign.name}</p>
+              <Link
+                href={`/campaigns/${campaign.id}`}
+                className="min-w-0 flex-1 transition-opacity hover:opacity-70"
+              >
+                <p className="truncate font-medium">{campaign.name}</p>
+                <p className="text-ink-500 mt-0.5 text-xs">
+                  {campaign.startsOn && campaign.endsOn
+                    ? `${campaign.startsOn} → ${campaign.endsOn}`
+                    : 'No dates set'}
+                </p>
+              </Link>
 
               <select
                 value={campaign.status}

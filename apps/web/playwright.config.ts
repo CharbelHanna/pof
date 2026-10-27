@@ -26,8 +26,14 @@ export default defineConfig({
    *
    * Throughput here is bounded by intentional cryptographic cost, so adding
    * workers makes the suite slower and flakier rather than faster.
+   *
+   * Two, not three: at three, `next dev` was slow enough to hydrate that
+   * clicks landed on server-rendered HTML. The form then submitted natively,
+   * the page reloaded, and the controlled input reset — which surfaces as
+   * "the campaign was never created" and looks like a broken form rather
+   * than a race.
    */
-  workers: process.env.CI ? 2 : 3,
+  workers: 2,
 
   /**
    * Playwright's 5s default is tuned for a warm, idle app. Here each test

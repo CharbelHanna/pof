@@ -1,10 +1,13 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { newId } from '@pof/schemas'
+import { useState } from 'react'
 import Link from 'next/link'
 
 import { orpc } from '~/lib/api.ts'
-import { formatSessionTime } from '~/lib/time.ts'
+import { useHydrated } from '~/lib/use-hydrated.ts'
+import { browserTimezone, formatSessionTime, toInstant } from '~/lib/time.ts'
 
 /**
  * Everything coming up, across every shoot — grouped by day.
@@ -47,6 +50,8 @@ export function Agenda() {
         <p className="text-ink-500 mt-1 text-sm">Everything coming up, across all your shoots.</p>
       </section>
 
+      <NewSessionForm />
+
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error.message}
@@ -82,13 +87,170 @@ export function Agenda() {
           ))}
         </div>
       ) : (
-        <p className="text-ink-500 text-sm">
-          Nothing scheduled. Add a session from a shoot to see it here.
-        </p>
+        <p className="text-ink-500 text-sm">Nothing scheduled yet.</p>
       )}
     </div>
   )
 }
+
+/**
+ * Schedule a session without first navigating into its shoot.
+ *
+ * A session must belong to a shoot — that is a real constraint, not an
+ * interface one — so this asks which. But requiring someone to remember which
+ * shoot, navigate to it, and only then add the session was making the obvious
+ * instinct ("I'm looking at my week, put something here") impossible.
+ */
+function NewSessionForm() {
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+
+  const shootsQuery = useQuery(
+    orpc.shoots.list.queryOptions({ input: { limit: 100, includeDeleted: false } }),
+  )
+
+  const create = useMutation(
+    orpc.sessions.create.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: orpc.sessions.list.key() })
+        setOpen(false)
+      },
+    }),
+  )
+
+  const hydrated = useHydrated()
+  const [shootId, setShootId] = useState('')
+  const [name, setName] = useState('')
+  const [startsAtLocal, setStartsAtLocal] = useState('')
+  const [hours, setHours] = useState(2)
+  const [timezone, setTimezone] = useState(browserTimezone)
+
+  const shoots = shootsQuery.data?.items ?? []
+
+  if (!open) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          disabled={shoots.length === 0}
+          className="bg-accent-600 hover:bg-accent-500 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60"
+        >
+          Schedule a session
+        </button>
+        {shoots.length === 0 && (
+          // The constraint stated plainly, rather than a button that silently
+          // does nothing.
+          <p className="text-ink-500 mt-2 text-xs">
+            Create a shoot first — every session belongs to one.
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <form
+      className="border-ink-200 dark:border-ink-800 space-y-3 rounded-lg border p-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!shootId || !name.trim() || !startsAtLocal) return
+
+        const startsAt = toInstant(startsAtLocal, timezone)
+        create.mutate({
+          id: newId(),
+          shootId,
+          name: name.trim(),
+          status: 'planned',
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + hours * 60 * 60 * 1000),
+          timezone,
+        })
+      }}
+    >
+      <select
+        value={shootId}
+        onChange={(event) => setShootId(event.target.value)}
+        aria-label="Shoot for new session"
+        className={agendaControl}
+      >
+        <option value="">Which shoot?</option>
+        {shoots.map((shoot) => (
+          <option key={shoot.id} value={shoot.id}>
+            {shoot.name}
+          </option>
+        ))}
+      </select>
+
+      <input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder="Session name"
+        aria-label="New session name"
+        className={agendaControl}
+      />
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input
+          type="datetime-local"
+          value={startsAtLocal}
+          onChange={(event) => setStartsAtLocal(event.target.value)}
+          aria-label="New session start"
+          className={agendaControl}
+        />
+        <select
+          value={hours}
+          onChange={(event) => setHours(Number(event.target.value))}
+          aria-label="New session length in hours"
+          className={agendaControl}
+        >
+          {[1, 2, 3, 4, 6, 8, 10, 12].map((value) => (
+            <option key={value} value={value}>
+              {value}h
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <input
+        value={timezone}
+        onChange={(event) => setTimezone(event.target.value)}
+        aria-label="New session timezone"
+        className={agendaControl}
+        placeholder="Europe/London"
+      />
+      <p className="text-ink-500 text-xs">
+        Times are in <strong>{timezone}</strong> — the zone the session happens in, not yours.
+      </p>
+
+      {create.error && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {create.error.message}
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={!hydrated || create.isPending || !shootId || !name.trim() || !startsAtLocal}
+          className="bg-accent-600 hover:bg-accent-500 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60"
+        >
+          {create.isPending ? 'Saving…' : 'Add session'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-ink-500 hover:text-ink-900 dark:hover:text-ink-100 px-4 py-2 text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
+
+const agendaControl =
+  'border-ink-200 dark:border-ink-700 dark:bg-ink-900 w-full rounded-lg border bg-white px-3 py-2.5 text-base outline-none focus:border-accent-500'
 
 function startOfToday(): Date {
   const now = new Date()
