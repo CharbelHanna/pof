@@ -101,14 +101,27 @@ jobs:
     name: End-to-end
     runs-on: ubuntu-latest
     # Longer than the other jobs: this one starts containers, runs migrations,
-    # provisions a browser and executes twelve tests across two viewports.
+    # provisions a browser and executes the suite across two viewports.
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          # Pinned to 24 for this job only, while the rest of CI runs the
+          # repo-wide Node version.
+          #
+          # `playwright install` hangs immediately after the browser download
+          # completes — reproducibly, on Node 26, under three different
+          # invocations. The same command on Node 23 locally finishes in
+          # seconds. Playwright 1.57 declares `node: ">=18"` with no upper
+          # bound, but a declared range is not evidence that a version
+          # released after it was published actually works.
+          #
+          # Node 24 is Maintenance LTS and predates Playwright 1.57, so it is
+          # the version the release was actually tested against. Revisit when
+          # Playwright publishes a release that names Node 26.
+          node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
@@ -143,24 +156,34 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
-      # Deliberately WITHOUT `--with-deps`.
+      # Invoked directly rather than through `pnpm --filter ... exec`.
       #
-      # `--with-deps` shells out to apt, and that step hung for the full job
-      # timeout on three separate runs — setting DEBIAN_FRONTEND=noninteractive
-      # did not help. The ubuntu-latest runner image already ships Playwright's
-      # browser libraries, so the apt pass has nothing to do here anyway.
+      # The job log shows the Chromium download reaching 100% and then the
+      # step producing no further output until the job timeout — the work
+      # finishes, the process never exits. Dropping `--with-deps` (so apt is
+      # never involved) did not change that, which rules out the earlier
+      # theory. The remaining difference from the invocation that works
+      # locally is the pnpm filter wrapper, so this uses the local form.
       #
-      # If a library ever is genuinely missing, Chromium fails to launch with a
-      # clear error in seconds, instead of the job hanging for 25 minutes and
-      # being reported as "cancelled" — which reads like someone pressed a
-      # button rather than a real failure.
+      # `--with-deps` stays off: the ubuntu-latest image already ships
+      # Playwright's browser libraries, and if one is ever missing Chromium
+      # fails to launch with a clear error in seconds.
+      #
+      # The step timeout is the belt and braces: should it hang again, it
+      # fails in five minutes with the evidence rather than consuming the
+      # whole job budget and reporting as "cancelled".
       - name: Install Playwright browser
-        run: pnpm --filter @pof/web exec playwright install chromium
+        timeout-minutes: 5
+        working-directory: apps/web
+        run: node ./node_modules/@playwright/test/cli.js install chromium
 
       - run: pnpm test:e2e
         env:
           DATABASE_URL: postgresql://pof_app:app_password@localhost:5432/pof
-          APP_URL: http://localhost:3000
+          # The suite runs its own server on 3100 so it never collides with
+          # a compose stack on 3000; playwright.config.ts overrides APP_URL
+          # to match, but keep them consistent here to avoid confusion.
+          APP_URL: http://localhost:3100
           BETTER_AUTH_SECRET: ci-secret-at-least-32-characters-long
           STORAGE_BUCKET: pof-assets
           STORAGE_ACCESS_KEY_ID: pofdev
