@@ -143,19 +143,26 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
-      # Deliberately WITHOUT `--with-deps`.
+      # Invoked directly rather than through `pnpm --filter ... exec`.
       #
-      # `--with-deps` shells out to apt, and that step hung for the full job
-      # timeout on three separate runs — setting DEBIAN_FRONTEND=noninteractive
-      # did not help. The ubuntu-latest runner image already ships Playwright's
-      # browser libraries, so the apt pass has nothing to do here anyway.
+      # The job log shows the Chromium download reaching 100% and then the
+      # step producing no further output until the job timeout — the work
+      # finishes, the process never exits. Dropping `--with-deps` (so apt is
+      # never involved) did not change that, which rules out the earlier
+      # theory. The remaining difference from the invocation that works
+      # locally is the pnpm filter wrapper, so this uses the local form.
       #
-      # If a library ever is genuinely missing, Chromium fails to launch with a
-      # clear error in seconds, instead of the job hanging for 25 minutes and
-      # being reported as "cancelled" — which reads like someone pressed a
-      # button rather than a real failure.
+      # `--with-deps` stays off: the ubuntu-latest image already ships
+      # Playwright's browser libraries, and if one is ever missing Chromium
+      # fails to launch with a clear error in seconds.
+      #
+      # The step timeout is the belt and braces: should it hang again, it
+      # fails in five minutes with the evidence rather than consuming the
+      # whole job budget and reporting as "cancelled".
       - name: Install Playwright browser
-        run: pnpm --filter @pof/web exec playwright install chromium
+        timeout-minutes: 5
+        working-directory: apps/web
+        run: node ./node_modules/@playwright/test/cli.js install chromium
 
       - run: pnpm test:e2e
         env:
