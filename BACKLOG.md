@@ -96,3 +96,83 @@ Worth deciding when picked up: whether consent becomes a first-class concept
 with its own table and audit trail (likely the right answer, and useful for
 model releases in every genre), or stays out of scope with the limitation
 stated plainly in the UI.
+
+---
+
+## Crew on a shoot
+
+Record who is working a shoot — a count and the roles. "Crew: 2 — main
+photographer and assistant."
+
+Nothing covers this today. Shots, gear and sessions are all planned, but the
+people are not, even though crew size drives call times, how many hands are
+available for lighting, and what a client is being billed for.
+
+**Open questions worth settling before building it.**
+
+- **Per shoot or per session?** An assistant might come to the studio day but
+  not the rooftop golden hour. The existing checklist tables already use
+  `shoot_id NOT NULL, session_id NULL` for exactly this "either level" shape,
+  and crew likely wants the same.
+- **Free text or linked people?** "Assistant" as a label is enough to plan
+  with. A named, reusable person starts to overlap with the contacts model in
+  Phase 6, and the two should not end up as parallel half-implementations of
+  the same idea.
+- Roles are probably a seeded reference list — photographer, assistant, hair
+  and makeup, stylist, producer, digitech — following the same
+  table-not-enum approach as shoot types, so adding one is an INSERT.
+
+---
+
+## Gear on a shoot
+
+Identify the kit to prepare, so nothing is discovered missing on location.
+
+**Partly planned already.** Phase 3 covers gear checklists, and the schema is
+designed for them: a `checklist` with `kind` of `gear`, hanging off a shoot
+with an optional session, so a kit can be per-shoot ("everything I'm
+bringing") or per-session.
+
+**What this adds to that plan** is the distinction between a checklist and a
+gear _library_:
+
+- A checklist is free text — fine for one shoot, retyped for every shoot
+  after it.
+- A library of owned kit, with items selected into a shoot, means "my 85mm"
+  is one thing that can be reused, counted, and eventually tracked when it is
+  out on a job or being repaired.
+
+The second is more useful and only slightly more work, but it is a different
+data model and worth deciding deliberately rather than discovering after the
+free-text version ships.
+
+---
+
+## Location search with real coordinates
+
+Attach a location to a shoot, chosen through a place search rather than typed
+as free text.
+
+**Planned for Phase 5**, together with sun and weather. Recording the specific
+requirement here because it changes what Phase 5 can deliver:
+
+**Coordinates are not a nice-to-have — they are the whole feature.** Golden
+hour, blue hour and sunrise/sunset are computed from latitude, longitude and
+date. A free-text address like "Glen Coe" cannot produce any of them. So the
+location field has to resolve to real coordinates at the point of entry, which
+means a geocoding search rather than a text box.
+
+This matters most for landscape work, where the light window _is_ the plan, but
+it applies to any outdoor session.
+
+**Worth deciding when picked up.**
+
+- Which geocoding provider, and under what licence. The same trap as weather:
+  several are free for non-commercial use only. Nominatim (OpenStreetMap) is
+  free with a usage policy; Photon and MapTiler are alternatives. It belongs
+  behind a port like `WeatherPort`, so the choice is reversible.
+- Coordinates should be stored on the shoot and session regardless of which
+  provider found them, so the sun calculation never depends on a third party
+  being reachable. SunCalc runs locally with no API at all.
+- Locations are worth reusing — a photographer returns to the same places —
+  which is why the plan already has a `location` table rather than a column.

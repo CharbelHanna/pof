@@ -97,7 +97,7 @@ rather than everything.
 | Phase | Scope                                                            | Status  |
 | ----- | ---------------------------------------------------------------- | ------- |
 | 0     | Foundations: monorepo, auth, tenancy, RLS, one entity end to end | ✅ done |
-| 1     | Campaigns, shoots, sessions, shoot-type registry                 |         |
+| 1     | Campaigns, shoots, sessions, shoot-type registry                 | ✅ done |
 | 2     | Assets, uploads, moodboards                                      |         |
 | 3     | Shot lists, checklists, on-set mode                              |         |
 | 4     | Session templates                                                |         |
