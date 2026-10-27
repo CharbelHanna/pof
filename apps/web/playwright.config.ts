@@ -1,6 +1,18 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
+ * `process.env` with undefined entries dropped, which is the shape
+ * `webServer.env` requires.
+ */
+function inheritedEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] => entry[1] !== undefined,
+    ),
+  )
+}
+
+/**
  * End-to-end tests against the real stack: real Next server, real Better Auth,
  * real Postgres, real row-level security.
  *
@@ -84,7 +96,17 @@ export default defineConfig({
     // `pnpm test:e2e` no longer fight over one address, and the suite always
     // gets the server it asked for.
     url: 'http://localhost:3100',
-    env: { PORT: '3100', APP_URL: 'http://localhost:3100' },
+    /**
+     * `webServer.env` REPLACES the environment rather than extending it, so
+     * the inherited variables have to be passed through explicitly.
+     *
+     * Omitting the spread cost a CI run: DATABASE_URL, BETTER_AUTH_SECRET and
+     * the storage credentials all arrived undefined and the server refused to
+     * boot. It passed locally the whole time, because `next.config.ts` loads
+     * the repo-root .env — which exists on a developer machine and does not
+     * exist in CI.
+     */
+    env: { ...inheritedEnv(), PORT: '3100', APP_URL: 'http://localhost:3100' },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',

@@ -180,7 +180,10 @@ jobs:
       - run: pnpm test:e2e
         env:
           DATABASE_URL: postgresql://pof_app:app_password@localhost:5432/pof
-          APP_URL: http://localhost:3000
+          # The suite runs its own server on 3100 so it never collides with
+          # a compose stack on 3000; playwright.config.ts overrides APP_URL
+          # to match, but keep them consistent here to avoid confusion.
+          APP_URL: http://localhost:3100
           BETTER_AUTH_SECRET: ci-secret-at-least-32-characters-long
           STORAGE_BUCKET: pof-assets
           STORAGE_ACCESS_KEY_ID: pofdev
