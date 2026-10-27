@@ -101,14 +101,27 @@ jobs:
     name: End-to-end
     runs-on: ubuntu-latest
     # Longer than the other jobs: this one starts containers, runs migrations,
-    # provisions a browser and executes twelve tests across two viewports.
+    # provisions a browser and executes the suite across two viewports.
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          # Pinned to 24 for this job only, while the rest of CI runs the
+          # repo-wide Node version.
+          #
+          # `playwright install` hangs immediately after the browser download
+          # completes — reproducibly, on Node 26, under three different
+          # invocations. The same command on Node 23 locally finishes in
+          # seconds. Playwright 1.57 declares `node: ">=18"` with no upper
+          # bound, but a declared range is not evidence that a version
+          # released after it was published actually works.
+          #
+          # Node 24 is Maintenance LTS and predates Playwright 1.57, so it is
+          # the version the release was actually tested against. Revisit when
+          # Playwright publishes a release that names Node 26.
+          node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
