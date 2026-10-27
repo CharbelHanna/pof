@@ -26,6 +26,28 @@
     "test:e2e": {
       "dependsOn": ["^build"],
       "cache": false,
+      // Turborepo SANITISES the environment: a task receives only what is
+      // declared in `globalEnv` or here. Everything else is stripped before
+      // the task starts.
+      //
+      // Without these, the Playwright web server booted with DATABASE_URL,
+      // BETTER_AUTH_SECRET and the storage credentials all undefined and
+      // refused to start. It went unnoticed locally because next.config.ts
+      // loads the repo-root .env — a file a developer machine has and CI
+      // does not, so the stripping was invisible until CI could finally run
+      // the suite.
+      "env": [
+        "DATABASE_URL",
+        "APP_URL",
+        "BETTER_AUTH_SECRET",
+        "STORAGE_ENDPOINT",
+        "STORAGE_BUCKET",
+        "STORAGE_ACCESS_KEY_ID",
+        "STORAGE_SECRET_ACCESS_KEY",
+        "STORAGE_FORCE_PATH_STYLE",
+        "MAIL_PROVIDER",
+        "MAIL_FROM"
+      ],
       "outputs": ["playwright-report/**", "test-results/**"]
     },
     "dev": {
