@@ -11,5 +11,8 @@ export * as sessions from './modules/planning/session.service.ts'
 export * as shootTypes from './modules/planning/shoot-type.service.ts'
 export * as crew from './modules/preparation/crew.service.ts'
 export * as gear from './modules/preparation/gear.service.ts'
+export * as locations from './modules/places/location.service.ts'
+export { createPhotonGeocoding } from './adapters/photon-geocoding.ts'
+export { createNominatimGeocoding } from './adapters/nominatim-geocoding.ts'
 
 export type { TenantContext, Database } from '@pof/db'

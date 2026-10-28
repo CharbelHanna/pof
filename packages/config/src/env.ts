@@ -13,6 +13,20 @@ import { z } from 'zod'
  * browser-safe counterpart.
  */
 
+/**
+ * An optional URL that tolerates an empty string.
+ *
+ * Templating systems routinely expand an unset variable to "" rather than
+ * omitting it — `${VAR:-}` in docker-compose is the obvious case. A plain
+ * `.optional()` rejects that, so a variable nobody set takes the whole
+ * application down at boot. Treat empty as absent, which is what it means.
+ */
+const optionalUrl = () =>
+  z
+    .union([z.literal(''), z.url()])
+    .optional()
+    .transform((value) => (value === '' ? undefined : value))
+
 const nonEmpty = (label: string) => z.string().min(1, `${label} must not be empty`)
 
 const serverSchema = z
@@ -50,7 +64,7 @@ const serverSchema = z
     // S3, Backblaze B2 or Hetzner by changing these values only. See
     // packages/core/src/ports/storage.ts for why the port is intent-shaped.
     // ---------------------------------------------------------------------
-    STORAGE_ENDPOINT: z.url().optional(),
+    STORAGE_ENDPOINT: optionalUrl(),
     STORAGE_REGION: z.string().default('auto'),
     STORAGE_BUCKET: nonEmpty('STORAGE_BUCKET'),
     STORAGE_ACCESS_KEY_ID: nonEmpty('STORAGE_ACCESS_KEY_ID'),
@@ -58,7 +72,7 @@ const serverSchema = z
     /** MinIO requires path-style addressing; R2 and S3 do not. */
     STORAGE_FORCE_PATH_STYLE: z.stringbool().default(false),
     /** CDN or public origin that serves processed derivatives. */
-    STORAGE_PUBLIC_URL: z.url().optional(),
+    STORAGE_PUBLIC_URL: optionalUrl(),
 
     // ---------------------------------------------------------------------
     // Mail. SMTP is the self-host escape hatch and the local-dev default.
@@ -71,7 +85,16 @@ const serverSchema = z
     SMTP_PASSWORD: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
 
-    SENTRY_DSN: z.url().optional(),
+    // ---------------------------------------------------------------------
+    // Geocoding. Every freely available provider carries a usage policy
+    // rather than a licence, so the choice is configuration — see
+    // packages/core/src/ports/geocoding.ts.
+    // ---------------------------------------------------------------------
+    GEOCODING_PROVIDER: z.enum(['photon', 'nominatim', 'none']).default('photon'),
+    /** Point at a self-hosted instance, which is what production should use. */
+    GEOCODING_BASE_URL: optionalUrl(),
+
+    SENTRY_DSN: optionalUrl(),
   })
   /**
    * Cross-field rules. Catching these at boot beats discovering at 2am that

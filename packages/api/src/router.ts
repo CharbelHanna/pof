@@ -4,6 +4,7 @@ import { authed, pub } from './base.ts'
 import { campaignRouter } from './routers/campaign.ts'
 import { crewRouter } from './routers/crew.ts'
 import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
+import { locationRouter } from './routers/location.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
 
@@ -42,6 +43,7 @@ export const router = {
   crew: crewRouter,
   gearItems: gearItemRouter,
   shootGear: shootGearRouter,
+  locations: locationRouter,
 }
 
 export type AppRouter = typeof router

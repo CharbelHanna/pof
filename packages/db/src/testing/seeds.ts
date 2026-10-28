@@ -34,6 +34,13 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
 
   gearItem: async (workspaceId) => ({ workspaceId, name: 'isolation probe gear' }),
 
+  location: async (workspaceId) => ({
+    workspaceId,
+    name: 'isolation probe location',
+    latitude: 56.6667,
+    longitude: -5.1,
+  }),
+
   shootGear: async (workspaceId, tx) => {
     const [parent] = await tx
       .insert(shoot)

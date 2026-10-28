@@ -235,6 +235,9 @@ importers:
       react-hook-form:
         specifier: ^7.91.0
         version: 7.91.0(@types/react@19.3.0)(react@19.3.1)
+      suncalc:
+        specifier: 2.1.1
+        version: 2.1.1
       zod:
         specifier: ^4.1.12
         version: 4.6.7
@@ -492,6 +495,9 @@ importers:
 
   packages/schemas:
     dependencies:
+      suncalc:
+        specifier: 2.1.1
+        version: 2.1.1
       uuidv7:
         specifier: ^1.0.2
         version: 1.2.1
@@ -502,6 +508,9 @@ importers:
       '@pof/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@types/suncalc':
+        specifier: 1.9.2
+        version: 1.9.2
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
@@ -1838,6 +1847,9 @@ packages:
   '@types/ssh2@1.15.6':
     resolution: {integrity: sha512-oGdxhBqcRTwSTKFm+9EiKzkNVYRLEFkcW44lhguvBalGJbWfGnDt/ezwSUZc+SF9m9bMc3VyklNAtp7zICjS5w==}
 
+  '@types/suncalc@1.9.2':
+    resolution: {integrity: sha512-ATAGBHHfA1TlE2tjfidLyTcysjoT2JHHEAmWRULh73SU9UTn++j5fqHEW16X6Y/2Li87jEQXzgu4R/OOdlDqzw==}
+
   '@vitest/expect@3.2.7':
     resolution: {integrity: sha512-E8eBXaKibuvH2pSZErOjdVb5vF4PbKYcrnluBTYxEk1l/VhhwZg1kZQsdtjq+CsF5CFydf2Rdkz7jDHKSisi3w==}
 
@@ -2971,6 +2983,9 @@ packages:
         optional: true
       babel-plugin-macros:
         optional: true
+
+  suncalc@2.1.1:
+    resolution: {integrity: sha512-ufMOPzYRk5aomEs3g+qeJGdCPZWC3TL94E0HQagoSusFnNXCvfuewWBroY3lxRHqA7IA8UGvgg7dcrSSDJsuEg==}
 
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
@@ -4114,6 +4129,8 @@ snapshots:
     dependencies:
       '@types/node': 18.19.130
 
+  '@types/suncalc@1.9.2': {}
+
   '@vitest/expect@3.2.7':
     dependencies:
       '@types/chai': 5.2.3
@@ -5243,6 +5260,8 @@ snapshots:
     dependencies:
       client-only: 0.0.1
       react: 19.3.1
+
+  suncalc@2.1.1: {}
 
   tagged-tag@1.0.0: {}
 

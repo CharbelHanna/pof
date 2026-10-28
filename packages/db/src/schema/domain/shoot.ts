@@ -14,6 +14,7 @@ import {
 import { primaryId, softDelete, timestamps, workspaceId } from '../columns.ts'
 import { organization } from '../auth.ts'
 import { campaign } from './campaign.ts'
+import { location } from './location.ts'
 import { shootType } from './shoot-type.ts'
 
 /**
@@ -72,6 +73,12 @@ export const shoot = pgTable(
 
     status: shootStatus('status').notNull().default('draft'),
 
+    /**
+     * The shoot's main place. Sessions may override it — a landscape trip
+     * visits several locations, and the light differs at each.
+     */
+    primaryLocationId: uuid('primary_location_id'),
+
     /** When the edit is due with the client. A plain date — no time of day. */
     deliveryDate: date('delivery_date'),
 
@@ -129,6 +136,12 @@ export const shoot = pgTable(
      * the `updatedSince` incremental-sync query the mobile app will use.
      */
     index('shoot_workspace_updated_idx').on(table.workspaceId, table.updatedAt),
+    foreignKey({
+      columns: [table.workspaceId, table.primaryLocationId],
+      foreignColumns: [location.workspaceId, location.id],
+      name: 'shoot_primary_location_fk',
+    }).onDelete('set null'),
+
     index('shoot_workspace_campaign_idx').on(table.workspaceId, table.campaignId),
   ],
 )
