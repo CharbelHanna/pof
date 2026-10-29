@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 
 /**
  * Better Auth tables — core plus the `organization` plugin.
@@ -129,6 +129,17 @@ export const member = pgTable(
   (table) => [
     index('member_organization_id_idx').on(table.organizationId),
     index('member_user_id_idx').on(table.userId),
+    /**
+     * A user belongs to a workspace once. Better Auth does not declare this,
+     * but every read treats membership as singular — `findWorkspaceForUser`
+     * takes the first row — so a duplicate would make "which workspace?"
+     * depend on row order.
+     *
+     * It is also the database-level backstop for lazy provisioning: that path
+     * serialises on an advisory lock, and this makes a second membership
+     * impossible even if some future caller forgets to.
+     */
+    uniqueIndex('member_organization_id_user_id_key').on(table.organizationId, table.userId),
   ],
 )
 
