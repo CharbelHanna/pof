@@ -39,3 +39,9 @@ Thumbs.db
 
 # local data volumes
 .data/
+
+# Host-specific configuration: a corporate CA bundle and the compose
+# override that mounts it. Neither is secret — a root CA is public by
+# design — but both describe one network and are meaningless elsewhere.
+certs/
+docker-compose.override.yml
