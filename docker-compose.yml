@@ -109,6 +109,9 @@ services:
       # published port and the origin the app believes it is served from.
       # They must agree: Better Auth validates callbacks against APP_URL.
       APP_URL: ${APP_URL:-http://localhost:${WEB_PORT:-3000}}
+      # Additional origins allowed to drive auth, comma-separated. Set this to
+      # reach the stack from a phone on the LAN without giving up localhost.
+      AUTH_TRUSTED_ORIGINS: ${AUTH_TRUSTED_ORIGINS:-}
       # NOTE: the host is `postgres`, not `localhost`. Inside the compose
       # network services reach each other by service name, so this cannot be
       # the same DATABASE_URL that host-side tools (db:migrate, db:seed,
