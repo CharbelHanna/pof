@@ -122,6 +122,11 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}
       STORAGE_FORCE_PATH_STYLE: 'true'
       MAIL_PROVIDER: ${MAIL_PROVIDER:-console}
+      # Which geocoder place search uses. Passed through so .env is the
+      # single place it is chosen — see .env.example for the policy
+      # differences between providers.
+      GEOCODING_PROVIDER: ${GEOCODING_PROVIDER:-photon}
+      GEOCODING_BASE_URL: ${GEOCODING_BASE_URL:-}
     ports:
       - '${WEB_PORT:-3000}:3000'
     restart: unless-stopped
@@ -144,6 +149,11 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}
       STORAGE_FORCE_PATH_STYLE: 'true'
       MAIL_PROVIDER: ${MAIL_PROVIDER:-console}
+      # Which geocoder place search uses. Passed through so .env is the
+      # single place it is chosen — see .env.example for the policy
+      # differences between providers.
+      GEOCODING_PROVIDER: ${GEOCODING_PROVIDER:-photon}
+      GEOCODING_BASE_URL: ${GEOCODING_BASE_URL:-}
     restart: unless-stopped
 
 volumes:

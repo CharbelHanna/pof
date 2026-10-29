@@ -2,6 +2,7 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { router } from '@pof/api'
 
 import { getDb } from '~/lib/db.ts'
+import { getGeocoding } from '~/lib/geocoding.ts'
 import { resolveSession } from '~/lib/session.ts'
 
 /**
@@ -20,6 +21,7 @@ async function handle(request: Request): Promise<Response> {
     prefix: '/api/rpc',
     context: {
       db: getDb(),
+      geocoding: getGeocoding(),
       // Resolved server-side on every request. See lib/session.ts for why the
       // client's active-organization value is never trusted on its own.
       session: await resolveSession(request.headers),

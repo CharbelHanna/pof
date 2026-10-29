@@ -1,3 +1,4 @@
+import type { GeocodingPort } from '@pof/core/ports'
 import type { Database, TenantContext } from '@pof/db'
 
 /**
@@ -12,6 +13,12 @@ import type { Database, TenantContext } from '@pof/db'
 export interface ApiContext {
   db: Database
   session: AuthenticatedSession | null
+  /**
+   * Optional: place search degrades to "unavailable" rather than breaking
+   * the app when no provider is configured. Everything else about locations,
+   * including sun times, works without it.
+   */
+  geocoding?: GeocodingPort | undefined
 }
 
 export interface AuthenticatedSession {

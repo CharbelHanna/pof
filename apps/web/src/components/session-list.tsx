@@ -4,12 +4,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { SESSION_STATUSES, newId, type SessionStatus } from '@pof/schemas'
 import { useState } from 'react'
 
+import { SunTimes } from '~/components/sun-times.tsx'
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
 import { formatSessionTime, localInputValue, toInstant, browserTimezone } from '~/lib/time.ts'
 
 /** Sessions belonging to one shoot, with inline creation. */
-export function SessionList({ shootId }: { shootId: string }) {
+export function SessionList({
+  shootId,
+  locationId,
+}: {
+  shootId: string
+  /** The shoot's primary location, used when a session has none of its own. */
+  locationId?: string | null
+}) {
   const queryClient = useQueryClient()
   const input = { shootId, limit: 200, includeDeleted: false }
 
@@ -124,6 +132,13 @@ export function SessionList({ shootId }: { shootId: string }) {
                 <p className="text-ink-500 mt-0.5 text-xs">
                   {formatSessionTime(session.startsAt, session.endsAt, session.timezone)}
                 </p>
+                {(session.locationId ?? locationId) && (
+                  <SunTimes
+                    locationId={(session.locationId ?? locationId)!}
+                    on={session.startsAt}
+                    timezone={session.timezone}
+                  />
+                )}
               </div>
 
               <select

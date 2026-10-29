@@ -13,6 +13,7 @@ import { sql } from 'drizzle-orm'
 
 import { organization } from '../auth.ts'
 import { primaryId, softDelete, timestamps, workspaceId } from '../columns.ts'
+import { location } from './location.ts'
 import { shoot } from './shoot.ts'
 
 /**
@@ -40,6 +41,12 @@ export const shootSession = pgTable(
     shootId: uuid('shoot_id').notNull(),
 
     name: text('name').notNull(),
+    /**
+     * Where this session happens. Falls back to the shoot's primary
+     * location when unset, so a single-location shoot needs setting once.
+     * Sun times are computed from whichever applies.
+     */
+    locationId: uuid('location_id'),
     status: sessionStatus('status').notNull().default('planned'),
     notes: text('notes'),
 
@@ -81,6 +88,12 @@ export const shootSession = pgTable(
       foreignColumns: [shoot.workspaceId, shoot.id],
       name: 'shoot_session_shoot_fk',
     }).onDelete('cascade'),
+
+    foreignKey({
+      columns: [table.workspaceId, table.locationId],
+      foreignColumns: [location.workspaceId, location.id],
+      name: 'shoot_session_location_fk',
+    }).onDelete('set null'),
 
     unique('shoot_session_workspace_id_id_key').on(table.workspaceId, table.id),
 

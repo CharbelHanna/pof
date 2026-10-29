@@ -105,3 +105,28 @@ describe('parseServerEnv', () => {
     }
   })
 })
+
+describe('optional URLs', () => {
+  it('treats an empty string as absent', () => {
+    // docker-compose's `${VAR:-}` expands an unset variable to "", and a
+    // plain .optional() rejects that — taking the app down at boot over a
+    // variable nobody set.
+    const env = parseServerEnv({ ...valid, GEOCODING_BASE_URL: '', SENTRY_DSN: '' })
+
+    expect(env.GEOCODING_BASE_URL).toBeUndefined()
+    expect(env.SENTRY_DSN).toBeUndefined()
+  })
+
+  it('still rejects a genuinely malformed URL', () => {
+    expect(() => parseServerEnv({ ...valid, GEOCODING_BASE_URL: 'not a url' })).toThrow(
+      /GEOCODING_BASE_URL/,
+    )
+  })
+
+  it('accepts a real URL', () => {
+    expect(
+      parseServerEnv({ ...valid, GEOCODING_BASE_URL: 'https://geo.example.com' })
+        .GEOCODING_BASE_URL,
+    ).toBe('https://geo.example.com')
+  })
+})

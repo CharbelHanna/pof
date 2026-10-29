@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { DynamicFields } from '~/components/dynamic-fields.tsx'
 import { CrewList } from '~/components/crew-list.tsx'
 import { GearList } from '~/components/gear-list.tsx'
+import { LocationPicker } from '~/components/location-picker.tsx'
 import { SessionList } from '~/components/session-list.tsx'
 import { orpc } from '~/lib/api.ts'
 
@@ -126,6 +127,15 @@ export function ShootDetail({ shootId }: { shootId: string }) {
           </select>
         </Row>
 
+        <Row label="Location">
+          <LocationPicker
+            value={shoot.primaryLocationId}
+            onChange={(locationId) =>
+              update.mutate({ id: shoot.id, primaryLocationId: locationId })
+            }
+          />
+        </Row>
+
         <Row label="Delivery date">
           <input
             type="date"
@@ -181,7 +191,7 @@ export function ShootDetail({ shootId }: { shootId: string }) {
         </p>
       )}
 
-      <SessionList shootId={shoot.id} />
+      <SessionList shootId={shoot.id} locationId={shoot.primaryLocationId} />
 
       <CrewList shootId={shoot.id} />
 

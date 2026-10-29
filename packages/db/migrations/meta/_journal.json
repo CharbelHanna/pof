@@ -50,6 +50,20 @@
       "when": 1793123252698,
       "tag": "0006_crew_gear_rls_and_boudoir",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793207470760,
+      "tag": "0007_harsh_pepper_potts",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793207494855,
+      "tag": "0008_location_rls",
+      "breakpoints": true
     }
   ]
 }

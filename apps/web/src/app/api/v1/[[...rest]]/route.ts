@@ -2,6 +2,7 @@ import { OpenAPIHandler } from '@orpc/openapi/fetch'
 import { router } from '@pof/api'
 
 import { getDb } from '~/lib/db.ts'
+import { getGeocoding } from '~/lib/geocoding.ts'
 import { resolveSession } from '~/lib/session.ts'
 
 /**
@@ -24,6 +25,7 @@ async function handle(request: Request): Promise<Response> {
     prefix: '/api/v1',
     context: {
       db: getDb(),
+      geocoding: getGeocoding(),
       session: await resolveSession(request.headers),
     },
   })
