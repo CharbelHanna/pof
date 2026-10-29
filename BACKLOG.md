@@ -76,3 +76,93 @@ it applies to any outdoor session.
   being reachable. SunCalc runs locally with no API at all.
 - Locations are worth reusing — a photographer returns to the same places —
   which is why the plan already has a `location` table rather than a column.
+
+---
+
+## Trip dates, and what "delivery date" assumes
+
+`shoot.delivery_date` is a single date meaning "when the edit is due with the
+client". That assumes a client and a deliverable, which a landscape shoot
+often has neither of — it is a trip, spanning days, across several locations,
+possibly with nothing owed to anyone at the end.
+
+The field is already optional, so nothing breaks today. The problem is that
+the vocabulary is wrong for a whole genre, and a field whose label does not
+match what you are doing invites being used for something it does not mean.
+
+**Three ways to fix it, in rough order of preference.**
+
+1. **Derive the span from sessions.** Sessions already carry `starts_at` and
+   `ends_at`, so a shoot's date range is `min(starts_at)` to `max(ends_at)`
+   without storing anything new. A multi-day trip is already expressible as
+   several sessions, which is also how each day gets its own location and
+   call time. This is probably right, and the cheapest.
+2. **Add explicit `starts_on` / `ends_on` columns to shoot.** Useful when a
+   trip is booked before any session is planned — "Iceland, second week of
+   March" long before the days are worked out. Costs a migration and
+   introduces two sources of truth for the same span, which have to be kept
+   from disagreeing.
+3. **Leave the column, relabel per genre.** The registry already varies
+   fields by genre, so landscape could present trip dates while portrait
+   presents a delivery date. Cheapest in code, but it would mean one column
+   storing two different meanings — exactly the ambiguity worth avoiding.
+
+Worth settling alongside the Gantt view below, which needs a date range per
+shoot and so forces the same question.
+
+---
+
+## Calendar view
+
+A month grid of planned sessions, alongside the existing agenda.
+
+The agenda is a chronological list and answers "what is next". A calendar
+answers a different question — "how busy is March, and where are the gaps" —
+which a list cannot show at a glance.
+
+Reuses the existing `sessions.list` endpoint, which already accepts `from`
+and `until`. Mostly presentation work.
+
+**Worth deciding when picked up.** Which timezone a month grid is drawn in.
+Sessions are stored as instants plus the zone they happen in, and a session
+at 23:00 in Sydney belongs to a different calendar day depending on whether
+the grid is drawn in the viewer's zone or the session's. The agenda already
+groups by the session's own zone; a grid should probably match, but it is
+worth being deliberate rather than letting it fall out of the implementation.
+
+---
+
+## Gantt view
+
+Shoots and their sessions on a timeline, so overlapping commitments and free
+weeks are visible at a glance.
+
+Depends on a shoot having a date RANGE rather than a single date — see the
+trip dates item above. Until that is settled, a Gantt chart has nothing
+meaningful to draw a bar between.
+
+Most useful once campaigns group several shoots: the bar chart of a campaign
+against its shoots is the view that shows whether a month is overcommitted.
+
+---
+
+## Map of a shoot's locations
+
+Show a shoot's locations on a map, and later export them.
+
+**Depends on location search**, above — a map needs coordinates, and the same
+entry explains why those have to come from a geocoding search rather than a
+text field.
+
+Most valuable for landscape and any multi-location trip, where the plan is
+partly a route: which locations, in what order, how far apart, and whether
+the drive between them fits inside the light.
+
+**On export.** "A custom Google map" is the obvious destination, but the
+portable form is **KML or GPX** — both import into Google My Maps, and also
+into Gaia, OsmAnd, a Garmin, and most things a photographer already carries.
+Exporting the open format keeps Google as one target rather than the only
+one, which matches how storage and weather are handled elsewhere.
+
+Display itself needs no Google dependency: MapLibre GL with a tile URL from
+configuration, as already planned for Phase 5.
