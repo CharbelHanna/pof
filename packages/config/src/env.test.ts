@@ -29,6 +29,39 @@ describe('parseServerEnv', () => {
     expect(env.STORAGE_FORCE_PATH_STYLE).toBe(false)
   })
 
+  describe('AUTH_TRUSTED_ORIGINS', () => {
+    it('defaults to empty when unset', () => {
+      expect(parseServerEnv(valid).AUTH_TRUSTED_ORIGINS).toEqual([])
+    })
+
+    it('treats an empty string as absent', () => {
+      // `${AUTH_TRUSTED_ORIGINS:-}` in docker-compose expands to "" rather
+      // than omitting the variable. Splitting that naively yields [''], which
+      // Better Auth would treat as an origin to match against.
+      expect(parseServerEnv({ ...valid, AUTH_TRUSTED_ORIGINS: '' }).AUTH_TRUSTED_ORIGINS).toEqual(
+        [],
+      )
+    })
+
+    it('splits a comma-separated list and trims whitespace', () => {
+      const env = parseServerEnv({
+        ...valid,
+        AUTH_TRUSTED_ORIGINS: 'http://192.168.1.50:3000, http://pof.local:3000',
+      })
+
+      expect(env.AUTH_TRUSTED_ORIGINS).toEqual([
+        'http://192.168.1.50:3000',
+        'http://pof.local:3000',
+      ])
+    })
+
+    it('drops empty entries from a trailing or doubled comma', () => {
+      const env = parseServerEnv({ ...valid, AUTH_TRUSTED_ORIGINS: 'http://a:3000,,' })
+
+      expect(env.AUTH_TRUSTED_ORIGINS).toEqual(['http://a:3000'])
+    })
+  })
+
   it('accepts both postgres:// and postgresql:// schemes', () => {
     expect(parseServerEnv({ ...valid, DATABASE_URL: 'postgres://u:p@h:5432/d' })).toBeTruthy()
     expect(parseServerEnv({ ...valid, DATABASE_URL: 'postgresql://u:p@h:5432/d' })).toBeTruthy()

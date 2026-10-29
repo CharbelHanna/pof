@@ -20,7 +20,9 @@ export function getAuth(): Auth {
       db: getDb(),
       secret: env.BETTER_AUTH_SECRET,
       baseURL: env.APP_URL,
-      trustedOrigins: [env.APP_URL],
+      // APP_URL first and always: AUTH_TRUSTED_ORIGINS only ever widens the
+      // set, so a misconfigured extra origin cannot lock out the real one.
+      trustedOrigins: [env.APP_URL, ...env.AUTH_TRUSTED_ORIGINS],
     })
   }
   return instance

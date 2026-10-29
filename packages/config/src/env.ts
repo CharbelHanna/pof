@@ -54,6 +54,29 @@ const serverSchema = z
     APP_URL: z.url(),
 
     /**
+     * Extra origins Better Auth will accept requests from, comma-separated.
+     *
+     * `APP_URL` is always trusted; this is purely additive. It exists because
+     * reaching the dev stack by any name other than the one in `APP_URL` —
+     * the host's LAN IP from a phone, a tunnel hostname, a second machine —
+     * fails the CSRF origin check with "Invalid origin", and the acceptance
+     * criteria for this app call for testing on a real phone.
+     *
+     * Wildcards are supported by Better Auth, so `http://192.168.1.*:3000`
+     * covers a DHCP range. Keep it empty in production: every entry here is
+     * an origin allowed to drive authenticated requests.
+     */
+    AUTH_TRUSTED_ORIGINS: z
+      .string()
+      .optional()
+      .transform((value) =>
+        (value ?? '')
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter((origin) => origin.length > 0),
+      ),
+
+    /**
      * Better Auth signing secret. 32+ bytes of randomness:
      *   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
      */
