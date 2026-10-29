@@ -109,9 +109,7 @@ describe('ensureWorkspaceForUser', () => {
     const slug = `ws-${userId.replaceAll('-', '').slice(0, 12)}`
 
     // Simulate the crash: the organization exists, the membership does not.
-    await db
-      .insert(schema.organization)
-      .values({ id: randomUUID(), name: 'My Studio', slug })
+    await db.insert(schema.organization).values({ id: randomUUID(), name: 'My Studio', slug })
 
     const workspaceId = await ensureWorkspaceForUser(db, userId)
 
