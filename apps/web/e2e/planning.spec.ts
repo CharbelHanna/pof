@@ -126,7 +126,16 @@ test('a shoot can be grouped into a campaign, and survives its deletion', async 
   await createShoot(page, 'Grouped shoot')
   await openShoot(page, 'Grouped shoot')
 
+  // Wait for the mutation the same way saveDetails does. Reloading straight
+  // after selectOption cancels the in-flight update, and the reloaded page
+  // shows no campaign — which reads like grouping is broken rather than like
+  // the test is impatient.
+  const grouped = page.waitForResponse(
+    (response) => response.url().includes('/shoots/update') && response.ok(),
+  )
   await page.getByLabel('Campaign', { exact: true }).selectOption({ label: 'Autumn/Winter 27' })
+  await grouped
+
   await page.reload()
   await expect(page.getByLabel('Campaign', { exact: true })).toHaveValue(/.+/)
 
