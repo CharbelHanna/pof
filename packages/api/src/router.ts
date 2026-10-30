@@ -7,6 +7,7 @@ import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
 import { locationRouter } from './routers/location.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
+import { shotRouter } from './routers/shot.ts'
 
 /**
  * The root router — the single surface every client reaches.
@@ -44,6 +45,7 @@ export const router = {
   gearItems: gearItemRouter,
   shootGear: shootGearRouter,
   locations: locationRouter,
+  shots: shotRouter,
 }
 
 export type AppRouter = typeof router

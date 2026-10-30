@@ -55,6 +55,15 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
     return { workspaceId, shootId: parent!.id, gearItemId: item!.id }
   },
 
+  shot: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe shot parent' })
+      .returning({ id: shoot.id })
+
+    return { workspaceId, shootId: parent!.id, title: 'isolation probe shot' }
+  },
+
   shootSession: async (workspaceId, tx) => {
     const [parent] = await tx
       .insert(shoot)
