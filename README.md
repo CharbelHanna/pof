@@ -83,8 +83,10 @@ pnpm db:seed
 ## Architecture
 
 See **[ARCHITECTURE.md](ARCHITECTURE.md)** for how the system is put together:
-the modular-monolith shape, the three layers of tenant isolation, the
-portability constraints, the technology choices and the repository layout.
+the modular-monolith shape, the
+[data model](ARCHITECTURE.md#data-model) as an entity diagram, the three layers
+of tenant isolation, the portability constraints, the technology choices and
+the repository layout.
 
 The most informative single file is
 [`tenant-isolation.test.ts`](packages/db/src/testing/tenant-isolation.test.ts):
