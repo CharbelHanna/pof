@@ -7,6 +7,7 @@ import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
 import { locationRouter } from './routers/location.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
+import { shotGearRouter } from './routers/shot-gear.ts'
 import { shotRouter } from './routers/shot.ts'
 
 /**
@@ -46,6 +47,7 @@ export const router = {
   shootGear: shootGearRouter,
   locations: locationRouter,
   shots: shotRouter,
+  shotGear: shotGearRouter,
 }
 
 export type AppRouter = typeof router
