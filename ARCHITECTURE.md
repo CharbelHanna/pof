@@ -66,6 +66,12 @@ erDiagram
     GEAR_ITEM   ||--o{ SHOT_GEAR_REQUIREMENT : "required as"
     SHOT        ||--o{ SHOT_GEAR_REQUIREMENT : requires
 
+    SHOOT_TYPE {
+        text key PK "a readable key, not a uuid - the only one"
+        text label
+        text description
+        int sort
+    }
     CAMPAIGN {
         uuid id PK
         text name
