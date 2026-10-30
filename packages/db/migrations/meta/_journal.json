@@ -85,6 +85,20 @@
       "when": 1793369639739,
       "tag": "0011_shot_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793372473084,
+      "tag": "0012_mixed_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793372478206,
+      "tag": "0013_shot_gear_requirement_rls",
+      "breakpoints": true
     }
   ]
 }

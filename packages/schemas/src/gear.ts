@@ -85,3 +85,39 @@ export const listShootGearSchema = z.object({
 export type ListShootGearInput = z.infer<typeof listShootGearSchema>
 
 export const shootGearIdSchema = z.object({ id: z.uuid() })
+
+// --- requirements for a single shot ---------------------------------------
+//
+// Distinct from the selection above, and deliberately so. `shoot_gear` is the
+// packing list — what goes in the bag, with `packed` ticked on the day.
+// A requirement answers "this frame needs the 85mm", which is planning, not
+// packing, and so has no `packed`.
+
+export const addShotGearRequirementSchema = z.object({
+  id: z.uuid().optional(),
+  shotId: z.uuid(),
+  gearItemId: z.uuid(),
+  /** "Two of them" is a quantity, not two rows. */
+  quantity: queryNumber.int().min(1).max(999).default(1),
+  /** How the item is used for this frame — "gelled CTO", "on a boom". */
+  notes: z.string().max(10_000).nullable().optional(),
+})
+export type AddShotGearRequirementInput = z.infer<typeof addShotGearRequirementSchema>
+
+export const updateShotGearRequirementSchema = z.object({
+  id: z.uuid(),
+  quantity: queryNumber.int().min(1).max(999).optional(),
+  notes: z.string().max(10_000).nullable().optional(),
+})
+export type UpdateShotGearRequirementInput = z.infer<typeof updateShotGearRequirementSchema>
+
+export const listShotGearRequirementsSchema = z.object({
+  shotId: z.uuid().optional(),
+  cursor: z.uuid().optional(),
+  limit: queryNumber.int().min(1).max(200).default(100),
+  updatedSince: z.coerce.date().optional(),
+  includeDeleted: queryBoolean.default(false),
+})
+export type ListShotGearRequirementsInput = z.infer<typeof listShotGearRequirementsSchema>
+
+export const shotGearRequirementIdSchema = z.object({ id: z.uuid() })

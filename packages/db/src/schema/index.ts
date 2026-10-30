@@ -28,7 +28,7 @@ import { campaign } from './domain/campaign.ts'
 import { shootSession } from './domain/session.ts'
 import { shoot } from './domain/shoot.ts'
 import { crewMember } from './domain/crew.ts'
-import { gearItem, shootGear } from './domain/gear.ts'
+import { gearItem, shootGear, shotGearRequirement } from './domain/gear.ts'
 import { location } from './domain/location.ts'
 import { shot } from './domain/shot.ts'
 
@@ -51,6 +51,7 @@ export const tenantTables = {
   shootGear,
   location,
   shot,
+  shotGearRequirement,
 } as const
 
 export type TenantTableName = keyof typeof tenantTables

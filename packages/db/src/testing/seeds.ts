@@ -1,4 +1,4 @@
-import { gearItem, shoot, type TenantTableName } from '../schema/index.ts'
+import { gearItem, shoot, shot, type TenantTableName } from '../schema/index.ts'
 import type { TenantDb } from '../tenant.ts'
 
 /**
@@ -62,6 +62,25 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
       .returning({ id: shoot.id })
 
     return { workspaceId, shootId: parent!.id, title: 'isolation probe shot' }
+  },
+
+  shotGearRequirement: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe requirement parent' })
+      .returning({ id: shoot.id })
+
+    const [frame] = await tx
+      .insert(shot)
+      .values({ workspaceId, shootId: parent!.id, title: 'isolation probe requirement shot' })
+      .returning({ id: shot.id })
+
+    const [item] = await tx
+      .insert(gearItem)
+      .values({ workspaceId, name: 'isolation probe required item' })
+      .returning({ id: gearItem.id })
+
+    return { workspaceId, shotId: frame!.id, gearItemId: item!.id }
   },
 
   shootSession: async (workspaceId, tx) => {
