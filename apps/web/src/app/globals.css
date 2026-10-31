@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /**
  * Tailwind v4 configures in CSS rather than a JS config file.
@@ -16,6 +16,14 @@
   --color-ink-300: oklch(0.78 0.012 260);
   --color-ink-500: oklch(0.58 0.016 260);
   --color-ink-700: oklch(0.38 0.02 260);
+  /*
+   * Borders and dividers in dark mode. Twelve call sites already used
+   * `dark:border-ink-800` / `dark:divide-ink-800` while this step did not
+   * exist — and Tailwind emits nothing for an undefined colour rather than
+   * failing, so those rules silently did nothing and the light-mode ink-200
+   * border stayed, glaring, on a dark background.
+   */
+  --color-ink-800: oklch(0.29 0.021 260);
   --color-ink-900: oklch(0.21 0.022 260);
   --color-ink-950: oklch(0.14 0.02 260);
 
