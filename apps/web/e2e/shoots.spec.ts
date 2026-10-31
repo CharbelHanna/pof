@@ -41,6 +41,25 @@ test('a new photographer can sign up and gets an empty shoot list', async ({ pag
   await expect(page.getByText('No shoots yet.')).toBeVisible()
 })
 
+test('the empty list explains the model, and stops once there is a shoot', async ({ page }) => {
+  await signUp(page)
+
+  // The only moment the structure is explained, so it is worth a test:
+  // silently losing it would leave every new account staring at one line of
+  // text with no idea what a session or a shot is for.
+  const explainer = page.getByRole('heading', { name: 'How Point of Focus fits together' })
+  await expect(explainer).toBeVisible()
+  await expect(page.getByText('Start with a shoot. Everything else is optional.')).toBeVisible()
+
+  await page.getByLabel('Shoot name').fill('First real shoot')
+  await page.getByRole('button', { name: 'Add shoot' }).click()
+  await expect(page.getByText('First real shoot')).toBeVisible()
+
+  // Onboarding, not decoration — it gets out of the way once it has done
+  // its job.
+  await expect(explainer).toBeHidden()
+})
+
 test('creating a shoot persists it across a reload', async ({ page }) => {
   await signUp(page)
 

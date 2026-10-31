@@ -5,6 +5,7 @@ import { SHOOT_STATUSES, newId, type ShootStatus } from '@pof/schemas'
 import Link from 'next/link'
 import { useState } from 'react'
 
+import { HowItWorks } from '~/components/how-it-works.tsx'
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
 
@@ -197,12 +198,18 @@ export function ShootList({ campaignId }: { campaignId?: string } = {}) {
             </li>
           ))}
         </ul>
+      ) : activeFilter ? (
+        <p className="text-ink-500 text-sm">No shoots match this filter.</p>
       ) : (
-        <p className="text-ink-500 text-sm">
-          {activeFilter
-            ? 'No shoots match this filter.'
-            : 'No shoots yet. Add your first one above.'}
-        </p>
+        /*
+         * A genuinely empty account, not a filter that matched nothing — the
+         * one moment the structure is worth explaining. Someone who has
+         * filtered to a campaign already knows what a shoot is.
+         */
+        <>
+          <p className="text-ink-500 text-sm">No shoots yet. Add your first one above.</p>
+          <HowItWorks />
+        </>
       )}
     </div>
   )
