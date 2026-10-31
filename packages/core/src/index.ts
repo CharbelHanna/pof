@@ -14,6 +14,7 @@ export * as gear from './modules/preparation/gear.service.ts'
 export * as shots from './modules/preparation/shot.service.ts'
 export * as shotGear from './modules/preparation/shot-gear.service.ts'
 export * as locations from './modules/places/location.service.ts'
+export * as sessionLocations from './modules/places/session-location.service.ts'
 export { createPhotonGeocoding } from './adapters/photon-geocoding.ts'
 export { createNominatimGeocoding } from './adapters/nominatim-geocoding.ts'
 

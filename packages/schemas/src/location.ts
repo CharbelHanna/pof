@@ -67,3 +67,53 @@ export const sunTimesSchema = z.object({
   on: z.coerce.date(),
 })
 export type SunTimesInput = z.infer<typeof sunTimesSchema>
+
+// --- locations used by a session ------------------------------------------
+//
+// A session is often a route rather than a single place: park at the layby,
+// walk to the lochside for blue hour, climb to the ridge for sunrise. The
+// order is the plan — it decides what is reachable before the light goes —
+// so position is part of the contract, not a display detail.
+
+export const addSessionLocationSchema = z.object({
+  id: z.uuid().optional(),
+  sessionId: z.uuid(),
+  locationId: z.uuid(),
+  /** Omitted means "append as the next stop". */
+  position: queryNumber.int().min(0).max(1_000_000_000).optional(),
+  /** Why this stop — "park here", "permit needed", "20 min walk in". */
+  notes: z.string().max(10_000).nullable().optional(),
+})
+export type AddSessionLocationInput = z.infer<typeof addSessionLocationSchema>
+
+export const updateSessionLocationSchema = z.object({
+  id: z.uuid(),
+  position: queryNumber.int().min(0).max(1_000_000_000).optional(),
+  notes: z.string().max(10_000).nullable().optional(),
+})
+export type UpdateSessionLocationInput = z.infer<typeof updateSessionLocationSchema>
+
+export const listSessionLocationsSchema = z.object({
+  sessionId: z.uuid().optional(),
+  cursor: z.uuid().optional(),
+  limit: queryNumber.int().min(1).max(200).default(100),
+  updatedSince: z.coerce.date().optional(),
+  includeDeleted: queryBoolean.default(false),
+})
+export type ListSessionLocationsInput = z.infer<typeof listSessionLocationsSchema>
+
+export const sessionLocationIdSchema = z.object({ id: z.uuid() })
+
+/**
+ * Reordering is one operation, not a series of updates.
+ *
+ * Moving one stop up a route changes the position of every stop it passed.
+ * Sent as independent patches the route would be briefly inconsistent, and
+ * permanently so if one request failed.
+ */
+export const reorderSessionLocationsSchema = z.object({
+  sessionId: z.uuid(),
+  /** Every live stop on the session, in its new visiting order. */
+  orderedIds: z.array(z.uuid()).min(1).max(100),
+})
+export type ReorderSessionLocationsInput = z.infer<typeof reorderSessionLocationsSchema>
