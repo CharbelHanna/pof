@@ -5,6 +5,7 @@ import { campaignRouter } from './routers/campaign.ts'
 import { crewRouter } from './routers/crew.ts'
 import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
 import { locationRouter } from './routers/location.ts'
+import { sessionLocationRouter } from './routers/session-location.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
 import { shotGearRouter } from './routers/shot-gear.ts'
@@ -46,6 +47,7 @@ export const router = {
   gearItems: gearItemRouter,
   shootGear: shootGearRouter,
   locations: locationRouter,
+  sessionLocations: sessionLocationRouter,
   shots: shotRouter,
   shotGear: shotGearRouter,
 }

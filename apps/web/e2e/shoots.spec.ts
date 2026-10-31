@@ -83,7 +83,16 @@ test('a shoot status can be changed and survives a reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Add' }).click()
   await expect(page.getByText('Studio portraits')).toBeVisible()
 
+  // Wait for the update to land before reloading. Reloading straight after
+  // selectOption cancels the in-flight mutation, and the reloaded page shows
+  // the old status — which reads as "status does not persist" rather than as
+  // the test being impatient. Same race the campaign-grouping and
+  // save-details tests already guard against.
+  const saved = page.waitForResponse(
+    (response) => response.url().includes('/shoots/update') && response.ok(),
+  )
   await page.getByLabel('Status for Studio portraits').selectOption('confirmed')
+  await saved
 
   await page.reload()
   await expect(page.getByText('portrait · confirmed')).toBeVisible()
