@@ -7,6 +7,7 @@ import { useState } from 'react'
 
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
+import { recordLinkClass } from '~/lib/link-styles.ts'
 
 /**
  * Campaigns — an optional grouping of shoots.
@@ -78,7 +79,7 @@ export function CampaignList() {
             <li key={campaign.id} className="flex items-center gap-3 py-3">
               <Link
                 href={`/campaigns/${campaign.id}`}
-                className="min-w-0 flex-1 transition-opacity hover:opacity-70"
+                className={`min-w-0 flex-1 ${recordLinkClass}`}
               >
                 <p className="truncate font-medium">{campaign.name}</p>
                 <p className="text-ink-500 mt-0.5 text-xs">

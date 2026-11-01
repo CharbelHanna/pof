@@ -31,6 +31,16 @@
   --color-accent-400: oklch(0.82 0.13 72);
   --color-accent-500: oklch(0.74 0.15 62);
   --color-accent-600: oklch(0.64 0.15 54);
+  /*
+   * Hover for accent text in light mode. The scale stopped at 600, so there
+   * was no way to darken an orange link on hover — the only neighbouring
+   * step was lighter, which would have brightened it exactly when it should
+   * feel pressed.
+   *
+   * Continues the existing progression rather than being picked by eye:
+   * each step so far drops lightness ~0.10 and rotates hue ~8 towards red.
+   */
+  --color-accent-700: oklch(0.54 0.14 46);
 }
 
 :root {

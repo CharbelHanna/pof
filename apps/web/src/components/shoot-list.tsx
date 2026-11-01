@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { HowItWorks } from '~/components/how-it-works.tsx'
+import { recordLinkClass } from '~/lib/link-styles.ts'
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
 
@@ -161,10 +162,7 @@ export function ShootList({ campaignId }: { campaignId?: string } = {}) {
         <ul className="divide-ink-200 dark:divide-ink-800 divide-y">
           {data.items.map((shoot) => (
             <li key={shoot.id} className="flex items-center gap-3 py-3">
-              <Link
-                href={`/shoots/${shoot.id}`}
-                className="min-w-0 flex-1 transition-opacity hover:opacity-70"
-              >
+              <Link href={`/shoots/${shoot.id}`} className={`min-w-0 flex-1 ${recordLinkClass}`}>
                 <p className="truncate font-medium">{shoot.name}</p>
                 <p className="text-ink-500 mt-0.5 text-xs">
                   {shoot.shootTypeKey} · {shoot.status}
