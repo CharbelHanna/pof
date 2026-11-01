@@ -46,6 +46,7 @@ async function scene(ctx: Awaited<ReturnType<typeof ws>>) {
     name: 'Lochside',
     latitude: 56.6667,
     longitude: -5.1,
+    permitRequired: false,
   })
 
   return { shoot, session, place }
@@ -76,6 +77,7 @@ describe('addSessionLocation', () => {
       name: 'Ridge',
       latitude: 56.67,
       longitude: -5.09,
+      permitRequired: false,
     })
 
     const first = await sessionLocations.addSessionLocation(db, ctx, {
@@ -159,6 +161,7 @@ describe('addSessionLocation', () => {
       name: 'Mine',
       latitude: 51.5,
       longitude: -0.1,
+      permitRequired: false,
     })
 
     await expect(
@@ -177,6 +180,7 @@ describe('addSessionLocation', () => {
       name: 'Theirs',
       latitude: 51.5,
       longitude: -0.1,
+      permitRequired: false,
     })
 
     await expect(
@@ -198,6 +202,7 @@ describe('reorderSessionLocations', () => {
         name,
         latitude: 56.6,
         longitude: -5.1,
+        permitRequired: false,
       })
       made.push(
         await sessionLocations.addSessionLocation(db, ctx, {
