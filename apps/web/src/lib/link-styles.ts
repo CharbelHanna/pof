@@ -1,22 +1,22 @@
 /**
  * The treatment for a link that names a record in a list.
  *
- * The active navigation link's orange at rest, with the inactive link's
- * hover behaviour: a colour shift, not an opacity fade, and in the direction
- * that increases contrast against the background — darker on a light page,
- * lighter on a dark one. That mirrors how the inactive nav link moves
- * towards `ink-900` in light mode and `ink-100` in dark.
+ * Accent orange, matching the active navigation link and the primary
+ * buttons, with the underline-on-hover this app already uses for every text
+ * link.
  *
- * `accent-700` was added to the palette for this. The scale stopped at 600,
- * so the only neighbouring step was *lighter* — hovering would have
- * brightened the link exactly when it should feel pressed.
+ * An earlier version shifted the colour on hover instead. That was out of
+ * step with the rest of the app in two ways, both visible in a survey of it:
+ * the only accent hover anywhere is `hover:bg-accent-500` on buttons, which
+ * goes *lighter* from 600, and no text link changes colour on hover at all —
+ * they underline. `hover:text-accent-*` existed nowhere else.
  *
- * One exported string rather than a copy per list, because three copies had
- * already drifted apart: each used `hover:opacity-70`, which faded the whole
- * row, metadata included, instead of responding on the name.
+ * One exported constant rather than a copy per list, because three copies
+ * drifting apart is how the inconsistency this replaced came about: each
+ * list had `hover:opacity-70`, which faded the whole row, metadata included,
+ * rather than responding on the name.
  *
  * The secondary line in each row sets its own `text-ink-500`, so it stays
- * muted and only the name carries the colour.
+ * muted and only the name is the link.
  */
-export const recordLinkClass =
-  'text-accent-600 transition-colors hover:text-accent-700 dark:hover:text-accent-400'
+export const recordLinkClass = 'text-accent-600 underline-offset-4 hover:underline'
