@@ -4,7 +4,8 @@ import Link from 'next/link'
 
 import { AppNav } from '~/components/app-nav.tsx'
 import { SignOutButton } from '~/components/sign-out-button.tsx'
-import { resolveSession } from '~/lib/session.ts'
+import { SignedInAs } from '~/components/signed-in-as.tsx'
+import { resolveViewer } from '~/lib/session.ts'
 
 /**
  * Authenticated shell.
@@ -14,8 +15,8 @@ import { resolveSession } from '~/lib/session.ts'
  * receiving it and having client JavaScript hide it.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await resolveSession(await headers())
-  if (!session) redirect('/sign-in')
+  const viewer = await resolveViewer(await headers())
+  if (!viewer) redirect('/sign-in')
 
   return (
     <div className="min-h-dvh">
@@ -29,7 +30,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <AppNav />
           </div>
 
-          <SignOutButton />
+          <div className="flex min-w-0 items-center gap-3">
+            <SignedInAs name={viewer.user.name} email={viewer.user.email} />
+            <SignOutButton />
+          </div>
         </div>
       </header>
 
