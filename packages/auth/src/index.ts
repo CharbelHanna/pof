@@ -27,6 +27,15 @@ export function createAuth(options: {
   secret: string
   baseURL: string
   trustedOrigins?: string[]
+  /**
+   * Delivers the password reset email.
+   *
+   * Injected rather than constructed here so this package stays free of a
+   * mail provider, and so a test can assert what would have been sent
+   * without sending it. Better Auth refuses to serve the forget-password
+   * endpoint at all unless this is supplied.
+   */
+  sendResetPassword?: (input: { to: string; url: string }) => Promise<void>
 }) {
   return betterAuth({
     secret: options.secret,
@@ -52,6 +61,20 @@ export function createAuth(options: {
       // part of hardening, once transactional mail is wired to a real provider.
       requireEmailVerification: false,
       minPasswordLength: 12,
+
+      /**
+       * One hour. Long enough to find the mail and act on it, short enough
+       * that a link sitting in an unattended inbox is not a standing key to
+       * the account.
+       */
+      resetPasswordTokenExpiresIn: 60 * 60,
+
+      ...(options.sendResetPassword
+        ? {
+            sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) =>
+              options.sendResetPassword!({ to: user.email, url }),
+          }
+        : {}),
     },
 
     advanced: {

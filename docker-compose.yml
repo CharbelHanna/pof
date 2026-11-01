@@ -40,6 +40,32 @@ services:
       retries: 10
       start_period: 10s
 
+  mail:
+    # Local stand-in for Resend / Azure Communication Services / Postmark.
+    # Mailpit is an SMTP server that accepts everything and delivers nothing,
+    # with a web inbox at http://localhost:8025.
+    #
+    # Used in preference to the `console` mail adapter when working on mail
+    # itself: it exercises the real SMTP path, so AUTH, TLS negotiation and
+    # the message encoding are all genuinely tested, and it renders the HTML
+    # part — which the console adapter, printing only the text part, cannot.
+    # It also has a JSON API, so an end-to-end test can read the inbox and
+    # follow the real link rather than trusting that mail was sent.
+    #
+    # Development only. Nothing in the application knows it exists; production
+    # points SMTP_HOST at a real relay, or switches MAIL_PROVIDER to resend.
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      # 1025 SMTP (what the app sends to), 8025 the web inbox (for you).
+      - '1025:1025'
+      - '8025:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   storage:
     # Local stand-in for Cloudflare R2 / AWS S3 / Backblaze B2. The
     # StoragePort's S3 adapter talks to all of them with the same code; only
@@ -103,6 +129,11 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      # Not strictly required to boot — mail is only sent on demand — but it
+      # makes a password reset work on the first try after "compose up"
+      # rather than failing if someone is quick.
+      mail:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       # Compose reads .env automatically, so WEB_PORT there changes both the
@@ -124,7 +155,17 @@ services:
       STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-pofdev}
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}
       STORAGE_FORCE_PATH_STYLE: 'true'
-      MAIL_PROVIDER: ${MAIL_PROVIDER:-console}
+      # Defaults to the local Mailpit container, so a password reset works
+      # out of the box with no account at any provider: read the mail at
+      # http://localhost:8025. Set MAIL_PROVIDER=resend (plus RESEND_API_KEY)
+      # or point SMTP_HOST at a real relay to send for real.
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      MAIL_FROM: ${MAIL_FROM:-noreply@pof.local}
+      SMTP_HOST: ${SMTP_HOST:-mail}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       # Which geocoder place search uses. Passed through so .env is the
       # single place it is chosen — see .env.example for the policy
       # differences between providers.
@@ -151,7 +192,17 @@ services:
       STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-pofdev}
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}
       STORAGE_FORCE_PATH_STYLE: 'true'
-      MAIL_PROVIDER: ${MAIL_PROVIDER:-console}
+      # Defaults to the local Mailpit container, so a password reset works
+      # out of the box with no account at any provider: read the mail at
+      # http://localhost:8025. Set MAIL_PROVIDER=resend (plus RESEND_API_KEY)
+      # or point SMTP_HOST at a real relay to send for real.
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      MAIL_FROM: ${MAIL_FROM:-noreply@pof.local}
+      SMTP_HOST: ${SMTP_HOST:-mail}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       # Which geocoder place search uses. Passed through so .env is the
       # single place it is chosen — see .env.example for the policy
       # differences between providers.

@@ -46,7 +46,11 @@
         "STORAGE_SECRET_ACCESS_KEY",
         "STORAGE_FORCE_PATH_STYLE",
         "MAIL_PROVIDER",
-        "MAIL_FROM"
+        "MAIL_FROM",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_USER",
+        "SMTP_PASSWORD"
       ],
       "outputs": ["playwright-report/**", "test-results/**"]
     },
