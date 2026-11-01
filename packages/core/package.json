@@ -16,12 +16,14 @@
   "dependencies": {
     "@pof/db": "workspace:*",
     "@pof/schemas": "workspace:*",
-    "drizzle-orm": "0.45.4"
+    "drizzle-orm": "0.45.4",
+    "nodemailer": "^10.3.1"
   },
   "devDependencies": {
     "@pof/tsconfig": "workspace:*",
     "@testcontainers/postgresql": "11.7.1",
     "@types/node": "^24.9.2",
+    "@types/nodemailer": "^8.0.2",
     "postgres": "3.4.9",
     "rimraf": "^6.0.1",
     "tsx": "4.20.6",

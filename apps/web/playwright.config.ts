@@ -106,7 +106,25 @@ export default defineConfig({
      * the repo-root .env — which exists on a developer machine and does not
      * exist in CI.
      */
-    env: { ...inheritedEnv(), PORT: '3100', APP_URL: 'http://localhost:3100' },
+    env: {
+      ...inheritedEnv(),
+      PORT: '3100',
+      APP_URL: 'http://localhost:3100',
+      /**
+       * Force mail through the Mailpit container rather than whatever .env
+       * happens to say. The password-reset suite reads the message back out
+       * of Mailpit's API and follows the real link, so `console` — the
+       * sensible default for everyday development — would leave it with
+       * nothing to read.
+       *
+       * `localhost`, not the `mail` service name: this server runs on the
+       * host, outside the compose network.
+       */
+      MAIL_PROVIDER: 'smtp',
+      SMTP_HOST: 'localhost',
+      SMTP_PORT: '1025',
+      MAIL_FROM: 'noreply@pof.local',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'pipe',

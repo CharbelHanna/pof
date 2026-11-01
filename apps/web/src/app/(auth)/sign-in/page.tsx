@@ -14,6 +14,12 @@ export default function SignInPage() {
       <AuthForm mode="sign-in" />
 
       <p className="text-ink-500 mt-6 text-sm">
+        <Link href="/forgot-password" className="text-accent-600 underline underline-offset-4">
+          Forgot your password?
+        </Link>
+      </p>
+
+      <p className="text-ink-500 mt-2 text-sm">
         No account yet?{' '}
         <Link href="/sign-up" className="text-accent-600 underline underline-offset-4">
           Create one

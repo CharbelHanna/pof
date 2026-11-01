@@ -19,3 +19,6 @@ export { createPhotonGeocoding } from './adapters/photon-geocoding.ts'
 export { createNominatimGeocoding } from './adapters/nominatim-geocoding.ts'
 
 export type { TenantContext, Database } from '@pof/db'
+
+export { createMail, type MailConfig } from './modules/identity/mail.ts'
+export { buildResetEmail } from './modules/identity/reset-email.ts'
