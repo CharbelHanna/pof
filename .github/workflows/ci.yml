@@ -126,7 +126,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Start infrastructure
-        run: docker compose up -d postgres storage
+        # `mail` is Mailpit. The password-reset suite sends through it and
+        # reads the message back out of its API, so without it the app cannot
+        # send and the tests have no inbox to read.
+        run: docker compose up -d postgres storage mail
 
       - name: Wait for Postgres
         run: |
@@ -137,6 +140,16 @@ jobs:
             sleep 2
           done
           echo "postgres did not become ready"; docker compose logs postgres; exit 1
+
+      - name: Wait for Mailpit
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8025/api/v1/messages; then
+              echo "mailpit ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "mailpit did not become ready"; docker compose logs mail; exit 1
 
       - run: pnpm db:migrate
         env:

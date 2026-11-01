@@ -53,9 +53,24 @@ export function getAuth(): Auth {
       trustedOrigins: [env.APP_URL, ...env.AUTH_TRUSTED_ORIGINS],
 
       /**
-       * Failures are deliberately NOT swallowed. If the provider rejects the
-       * message the request fails, because "check your inbox" over a mail
-       * that was never sent is the worst possible outcome here.
+       * Throwing here does NOT fail the request.
+       *
+       * Better Auth wraps this in `runInBackgroundOrAwait`, which awaits the
+       * promise but catches everything and only writes
+       * "Failed to run background task" to the logger. The endpoint answers
+       * 200 either way — deliberate on its part, since a response that
+       * varied with delivery would leak whether the address has an account.
+       *
+       * The consequence is worth stating plainly: a misconfigured mail
+       * provider looks exactly like working software. The user is told to
+       * check their inbox, nothing arrives, and the only evidence is a log
+       * line nobody is watching.
+       *
+       * What guards against that is the end-to-end suite, which sends
+       * through Mailpit and reads the message back out of its inbox — so a
+       * broken mail path fails CI rather than reaching a user. That is why
+       * the e2e job starts the `mail` service; CI caught exactly this
+       * failure when it did not.
        */
       sendResetPassword: async ({ to, url }) => {
         await getMail().send(buildResetEmail({ to, url }))
