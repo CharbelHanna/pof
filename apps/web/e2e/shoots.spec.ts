@@ -138,6 +138,35 @@ test('one photographer cannot see another photographer’s shoots', async ({ bro
   }
 })
 
+test('the header says which account is signed in', async ({ page }) => {
+  const email = await signUp(page)
+
+  // Without this there is no way to tell a test account from a real one:
+  // every workspace looks alike, so an empty shoot list reads as "new
+  // account" when it may mean "wrong account".
+  await expect(page.getByText(email, { exact: true })).toBeVisible()
+
+  // It is chrome, so it has to survive navigation rather than appear only on
+  // the landing route.
+  await page.goto('/campaigns')
+  await expect(page.getByText(email, { exact: true })).toBeVisible()
+})
+
+test('a second account sees its own address, not the first one', async ({ page }) => {
+  const first = await signUp(page)
+  await expect(page.getByText(first, { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page).toHaveURL(/\/sign-in$/)
+
+  const second = await signUp(page)
+
+  // A stale identity in the header would be worse than none: it would say,
+  // confidently, that you are someone you are not.
+  await expect(page.getByText(second, { exact: true })).toBeVisible()
+  await expect(page.getByText(first, { exact: true })).toBeHidden()
+})
+
 test('signing out protects the app and sign-in restores access', async ({ page }) => {
   await signUp(page)
   await page.getByRole('button', { name: 'Sign out' }).click()
