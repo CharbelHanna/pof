@@ -120,6 +120,20 @@
       "when": 1793627697298,
       "tag": "0016_chunky_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793642631741,
+      "tag": "0017_wise_gauntlet",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793642635729,
+      "tag": "0018_asset_rls",
+      "breakpoints": true
     }
   ]
 }

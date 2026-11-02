@@ -120,6 +120,14 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
     return { workspaceId, sessionId: session!.id, locationId: place!.id }
   },
 
+  asset: async (workspaceId) => ({
+    workspaceId,
+    // Unique per call: storage_key is globally unique, so a fixed probe
+    // value would collide between the two tenants the suite seeds.
+    storageKey: `w/${workspaceId}/a/${crypto.randomUUID()}/original.jpg`,
+    mime: 'image/jpeg',
+  }),
+
   shootSession: async (workspaceId, tx) => {
     const [parent] = await tx
       .insert(shoot)
