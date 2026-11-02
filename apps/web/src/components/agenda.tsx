@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
 import { browserTimezone, formatSessionTime, toInstant } from '~/lib/time.ts'
+import { recordLinkClass } from '~/lib/link-styles.ts'
 
 /**
  * Everything coming up, across every shoot — grouped by day.
@@ -72,7 +73,7 @@ export function Agenda() {
                   <li key={session.id} className="py-3">
                     <Link
                       href={`/shoots/${session.shootId}`}
-                      className="block transition-opacity hover:opacity-70"
+                      className={`block ${recordLinkClass}`}
                     >
                       <p className="font-medium">{session.name}</p>
                       <p className="text-ink-500 mt-0.5 text-xs">
