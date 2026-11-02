@@ -36,7 +36,7 @@ const DEMO_SHOOTS = [
     id: '0193a000-0000-7000-8000-000000000002',
     name: 'Vogue Italia — autumn editorial',
     shootTypeKey: 'editorial',
-    status: 'planning' as const,
+    status: 'planned' as const,
     notes: 'Three looks, studio day plus a rooftop golden hour session.',
   },
   {

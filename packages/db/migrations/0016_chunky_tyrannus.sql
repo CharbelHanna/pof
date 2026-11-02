@@ -1,0 +1,32 @@
+-- ===========================================================================
+-- Line up the shoot and session status vocabularies.
+-- ===========================================================================
+--
+-- The two enums used different words for the same ideas:
+--
+--   shoot:    draft | planning | confirmed | shooting    | completed | cancelled
+--   session:            planned | confirmed | in_progress | completed | cancelled
+--
+-- `planning` is also the odd one grammatically — every other value is a
+-- state (draft, confirmed, completed), not an activity.
+--
+-- After this, session_status is exactly shoot_status minus `draft`, so a
+-- view showing both can share one set of labels and colours.
+--
+-- ---------------------------------------------------------------------------
+-- Why this is hand-written
+-- ---------------------------------------------------------------------------
+-- drizzle-kit generated a destructive version: cast the column to text, DROP
+-- TYPE, recreate it, cast back. That cast back CANNOT succeed — the new type
+-- has no `planning` member, so every existing row holding it fails with
+-- "invalid input value for enum". Four shoots in the development database
+-- were in exactly that state when this was written, which is how it was
+-- caught rather than assumed.
+--
+-- RENAME VALUE is a catalog change. It rewrites no rows, so existing data
+-- simply reads under the new name, and it preserves each value's sort
+-- position — which is what keeps the resulting type identical to the one
+-- the Drizzle schema declares.
+
+ALTER TYPE "public"."shoot_status" RENAME VALUE 'planning' TO 'planned';--> statement-breakpoint
+ALTER TYPE "public"."session_status" RENAME VALUE 'in_progress' TO 'shooting';

@@ -10,7 +10,7 @@ import { z } from 'zod'
 export const SESSION_STATUSES = [
   'planned',
   'confirmed',
-  'in_progress',
+  'shooting',
   'completed',
   'cancelled',
 ] as const

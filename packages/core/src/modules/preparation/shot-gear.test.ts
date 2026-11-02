@@ -31,7 +31,7 @@ async function scene(ctx: Awaited<ReturnType<typeof ws>>) {
   const shoot = await shoots.createShoot(db, ctx, {
     name: 'Requirement test shoot',
     shootTypeKey: 'portrait',
-    status: 'planning',
+    status: 'planned',
   })
   const frame = await shots.createShot(db, ctx, {
     shootId: shoot.id,
