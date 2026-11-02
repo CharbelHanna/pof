@@ -29,14 +29,24 @@ import { shootType } from './shoot-type.ts'
 /**
  * Lifecycle status.
  *
- * A Postgres enum is appropriate *here* — these five values are cross-genre and
- * stable, and the application branches on them. Contrast with shoot *type*
- * (portrait / editorial / landscape / product), which is a seeded reference
- * table precisely because adding a genre must not require a migration.
+ * A Postgres enum is appropriate *here* — these six values are cross-genre and
+ * stable. Contrast with shoot *type* (portrait / editorial / landscape /
+ * product / boudoir), which is a seeded reference table precisely because
+ * adding a genre must not require a migration.
+ *
+ * Nothing in the application branches on the value yet: it is a label the
+ * photographer sets and reads, and no transition is enforced. Said plainly
+ * because an earlier version of this comment claimed otherwise, and a
+ * comment that overstates what the code does is worse than none.
+ *
+ * `session_status` is deliberately the same vocabulary minus `draft` — a
+ * session always has concrete start and end times, so there is nothing for
+ * it to be a draft of. Keeping it a strict subset means a view showing both
+ * can share one set of labels and colours.
  */
 export const shootStatus = pgEnum('shoot_status', [
   'draft',
-  'planning',
+  'planned',
   'confirmed',
   'shooting',
   'completed',

@@ -26,7 +26,7 @@ import { shoot } from './shoot.ts'
 export const sessionStatus = pgEnum('session_status', [
   'planned',
   'confirmed',
-  'in_progress',
+  'shooting',
   'completed',
   'cancelled',
 ])

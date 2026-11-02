@@ -26,7 +26,7 @@ afterAll(async () => {
 const ws = () => newWorkspace(db)
 
 async function shootFor(ctx: Awaited<ReturnType<typeof ws>>, name = 'Shot test shoot') {
-  return shoots.createShoot(db, ctx, { name, shootTypeKey: 'portrait', status: 'planning' })
+  return shoots.createShoot(db, ctx, { name, shootTypeKey: 'portrait', status: 'planned' })
 }
 
 describe('createShot', () => {

@@ -11,7 +11,7 @@ import { z } from 'zod'
 
 export const SHOOT_STATUSES = [
   'draft',
-  'planning',
+  'planned',
   'confirmed',
   'shooting',
   'completed',

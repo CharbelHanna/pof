@@ -31,7 +31,7 @@ async function scene(ctx: Awaited<ReturnType<typeof ws>>) {
   const shoot = await shoots.createShoot(db, ctx, {
     name: 'Glen Coe sunrise',
     shootTypeKey: 'landscape',
-    status: 'planning',
+    status: 'planned',
   })
   const { startsAt, endsAt } = sessionWindow()
   const session = await sessions.createSession(db, ctx, {
