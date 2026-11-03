@@ -1,0 +1,16 @@
+-- ===========================================================================
+-- Tenant isolation for assets.
+-- ===========================================================================
+--
+-- One line, using the helper from 0001: enables and FORCEs row-level
+-- security, creates the workspace policy with both USING and WITH CHECK,
+-- grants the application role CRUD, and attaches the updated_at trigger.
+-- `asset` is registered in `tenantTables` in src/schema/index.ts, where the
+-- isolation suite picks it up automatically.
+--
+-- Worth stating plainly, because it is the one place this protection ends:
+-- row-level security governs the TABLE, not the bucket. Nothing here stops
+-- someone who holds an object key from fetching the bytes. That is why keys
+-- embed the workspace id, why upload targets are short-lived, and why the
+-- service re-checks the row through withTenant before issuing any URL.
+SELECT enable_tenant_rls('asset');

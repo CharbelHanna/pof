@@ -127,6 +127,20 @@
       "when": 1793656436711,
       "tag": "0017_crazy_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793720496180,
+      "tag": "0018_tan_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793720500489,
+      "tag": "0019_asset_rls",
+      "breakpoints": true
     }
   ]
 }
