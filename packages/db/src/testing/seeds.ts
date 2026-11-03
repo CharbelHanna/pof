@@ -168,6 +168,29 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
    */
   workspaceUsage: async (workspaceId) => ({ workspaceId, storageBytes: 0, assetCount: 0 }),
 
+  shotReference: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe reference parent' })
+      .returning({ id: shoot.id })
+
+    const [frame] = await tx
+      .insert(shot)
+      .values({ workspaceId, shootId: parent!.id, title: 'isolation probe reference shot' })
+      .returning({ id: shot.id })
+
+    const [file] = await tx
+      .insert(asset)
+      .values({
+        workspaceId,
+        storageKey: `w/${workspaceId}/a/${crypto.randomUUID()}/original.jpg`,
+        mime: 'image/jpeg',
+      })
+      .returning({ id: asset.id })
+
+    return { workspaceId, shotId: frame!.id, assetId: file!.id }
+  },
+
   shootSession: async (workspaceId, tx) => {
     const [parent] = await tx
       .insert(shoot)

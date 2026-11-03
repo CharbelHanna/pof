@@ -169,6 +169,20 @@
       "when": 1793740870178,
       "tag": "0023_workspace_usage_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793742061156,
+      "tag": "0024_abandoned_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793742065110,
+      "tag": "0025_shot_reference_rls",
+      "breakpoints": true
     }
   ]
 }
