@@ -95,6 +95,9 @@ export function SessionStops({
           <LocationPicker
             value={null}
             label="Add a stop"
+            // Hide places this session already visits: adding one is
+            // idempotent, so offering it again could only appear to fail.
+            excludeIds={stops.map((stop) => stop.locationId)}
             onChange={(locationId) => {
               if (locationId) add.mutate({ sessionId, locationId })
             }}

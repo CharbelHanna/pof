@@ -20,10 +20,20 @@ export function LocationPicker({
   value,
   onChange,
   label = 'Location',
+  excludeIds,
 }: {
   value: string | null
   onChange: (locationId: string | null) => void
   label?: string
+  /**
+   * Locations the caller already has, hidden from the list.
+   *
+   * Without this, picking a place a session already visits looked broken:
+   * the add is idempotent, so it returned the existing row and nothing on
+   * screen changed. Offering a choice that cannot do anything is worse than
+   * not offering it.
+   */
+  excludeIds?: readonly string[]
 }) {
   const queryClient = useQueryClient()
   const hydrated = useHydrated()
@@ -61,6 +71,13 @@ export function LocationPicker({
     }),
   )
 
+  const excluded = new Set(excludeIds ?? [])
+  const available = (saved.data?.items ?? []).filter(
+    // The current value stays listed even if excluded, or a controlled
+    // select would silently fall back to "No location".
+    (place) => place.id === value || !excluded.has(place.id),
+  )
+
   if (!searching) {
     return (
       <div className="space-y-2">
@@ -72,7 +89,7 @@ export function LocationPicker({
             className={controlClass}
           >
             <option value="">No location</option>
-            {saved.data?.items.map((place) => (
+            {available.map((place) => (
               <option key={place.id} value={place.id}>
                 {place.name}
               </option>
