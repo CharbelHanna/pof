@@ -1,0 +1,12 @@
+-- ===========================================================================
+-- Tenant isolation for workspace usage.
+-- ===========================================================================
+--
+-- The same helper as every other tenant table: enables and FORCEs row-level
+-- security, creates the workspace policy with both USING and WITH CHECK,
+-- grants the application role CRUD, and attaches the updated_at trigger.
+--
+-- Worth noting that this table has no `id` of its own — `workspace_id` IS
+-- the primary key, one row per workspace. The helper only ever requires
+-- `workspace_id` and `updated_at`, so that shape works unchanged.
+SELECT enable_tenant_rls('workspace_usage');

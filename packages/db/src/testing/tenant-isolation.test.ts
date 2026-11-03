@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { and, eq, getTableName, sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { createDatabase, type Database } from '../client.ts'
@@ -105,6 +106,20 @@ describe('the application connects as a role RLS actually applies to', () => {
   })
 })
 
+/**
+ * The column that identifies a row within a workspace.
+ *
+ * Almost every tenant table has `id`. `workspace_usage` does not — it holds
+ * exactly one row per workspace, keyed by `workspace_id` — and this suite
+ * has to cover it rather than skip it, because "every tenant table is
+ * isolated" is the guarantee the file exists to make. Skipping the awkward
+ * shape would quietly narrow that to "every table shaped the way we
+ * expected".
+ */
+function rowKey(table: (typeof tableEntries)[number][1]): AnyPgColumn {
+  return ('id' in table ? table.id : table.workspaceId) as AnyPgColumn
+}
+
 describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
   const a = () => workspaceA.get(name)!
   const b = () => workspaceB.get(name)!
@@ -119,21 +134,25 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
       tx
         .insert(table)
         .values((await seed(a(), tx)) as never)
-        .returning({ id: table.id }),
+        .returning({ id: rowKey(table) }),
     )
     const [insertedB] = await withTenant(db, ctx(b()), async (tx) =>
       tx
         .insert(table)
         .values((await seed(b(), tx)) as never)
-        .returning({ id: table.id }),
+        .returning({ id: rowKey(table) }),
     )
 
-    rowA = insertedA!.id
-    rowB = insertedB!.id
+    // `rowKey` erases the column's literal type, so the returned value
+    // widens to unknown. Both keys are uuids either way.
+    rowA = insertedA!.id as string
+    rowB = insertedB!.id as string
   })
 
   it('shows a workspace only its own rows', async () => {
-    const visible = await withTenant(db, ctx(a()), (tx) => tx.select({ id: table.id }).from(table))
+    const visible = await withTenant(db, ctx(a()), (tx) =>
+      tx.select({ id: rowKey(table) }).from(table),
+    )
 
     expect(visible.map((row) => row.id)).toContain(rowA)
     expect(visible.map((row) => row.id)).not.toContain(rowB)
@@ -143,7 +162,10 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
     // The realistic attack: an id leaks (a URL, a log line, a shared
     // screenshot) and is replayed under a different workspace.
     const found = await withTenant(db, ctx(a()), (tx) =>
-      tx.select({ id: table.id }).from(table).where(eq(table.id, rowB)),
+      tx
+        .select({ id: rowKey(table) })
+        .from(table)
+        .where(eq(rowKey(table), rowB)),
     )
 
     expect(found).toHaveLength(0)
@@ -154,8 +176,8 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
       tx
         .update(table)
         .set({ updatedAt: new Date() } as never)
-        .where(eq(table.id, rowB))
-        .returning({ id: table.id }),
+        .where(eq(rowKey(table), rowB))
+        .returning({ id: rowKey(table) }),
     )
 
     expect(updated).toHaveLength(0)
@@ -163,14 +185,20 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
 
   it('refuses to delete another workspace row', async () => {
     const deleted = await withTenant(db, ctx(a()), (tx) =>
-      tx.delete(table).where(eq(table.id, rowB)).returning({ id: table.id }),
+      tx
+        .delete(table)
+        .where(eq(rowKey(table), rowB))
+        .returning({ id: rowKey(table) }),
     )
 
     expect(deleted).toHaveLength(0)
 
     // And B still has it.
     const stillThere = await withTenant(db, ctx(b()), (tx) =>
-      tx.select({ id: table.id }).from(table).where(eq(table.id, rowB)),
+      tx
+        .select({ id: rowKey(table) })
+        .from(table)
+        .where(eq(rowKey(table), rowB)),
     )
     expect(stillThere).toHaveLength(1)
   })
@@ -201,7 +229,7 @@ describe.each(tableEntries)('%s is isolated per workspace', (name, table) => {
     // SQL for a report, a repository helper that skipped the context — must
     // fail CLOSED. current_setting(..., true) yields NULL when unset, so the
     // policy matches zero rows rather than every row.
-    const leaked = await db.select({ id: table.id }).from(table)
+    const leaked = await db.select({ id: rowKey(table) }).from(table)
 
     expect(leaked).toHaveLength(0)
   })

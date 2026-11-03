@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { schema, withTenant, type Database, type TenantContext } from '@pof/db'
 
 import { NotFoundError } from '../../errors.ts'
+import { applyUsageDelta, assetFootprint } from './usage.service.ts'
 import type { ImagePort, VariantSpec } from '../../ports/image.ts'
 import type { StoragePort } from '../../ports/storage.ts'
 
@@ -164,6 +165,21 @@ export async function processAsset(
         variants,
       })
       .where(and(eq(asset.id, assetId), eq(asset.workspaceId, ctx.workspaceId)))
+
+    /**
+     * Only the derivatives: the original was counted at confirm.
+     *
+     * Expressed as new-minus-old rather than as a plain addition, which is
+     * what makes it safe for the retries this pipeline takes for granted.
+     * A job that failed after writing some variants and is retried
+     * re-renders all of them, and this contributes only the difference —
+     * zero when the set is unchanged. A bare `+= new` would inflate the
+     * figure on every retry, and nothing would ever correct it.
+     */
+    const before = assetFootprint({ bytes: 0, variants: row.variants })
+    const after = assetFootprint({ bytes: 0, variants })
+
+    await applyUsageDelta(tx, ctx.workspaceId, { bytes: after - before, assets: 0 })
 
     return { status: 'ready' as const }
   })
