@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { DynamicFields } from '~/components/dynamic-fields.tsx'
 import { CrewList } from '~/components/crew-list.tsx'
 import { GearList } from '~/components/gear-list.tsx'
+import { Moodboard } from '~/components/moodboard.tsx'
 import { LocationPicker } from '~/components/location-picker.tsx'
 import { SessionList } from '~/components/session-list.tsx'
 import { orpc } from '~/lib/api.ts'
@@ -196,6 +197,8 @@ export function ShootDetail({ shootId }: { shootId: string }) {
       <CrewList shootId={shoot.id} />
 
       <GearList shootId={shoot.id} />
+
+      <Moodboard shootId={shoot.id} />
     </div>
   )
 }
