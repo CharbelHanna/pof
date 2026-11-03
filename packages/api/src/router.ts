@@ -11,6 +11,7 @@ import { sessionLocationRouter } from './routers/session-location.ts'
 import { sessionRouter } from './routers/session.ts'
 import { shootRouter } from './routers/shoot.ts'
 import { shotGearRouter } from './routers/shot-gear.ts'
+import { shotReferenceRouter } from './routers/shot-reference.ts'
 import { shotRouter } from './routers/shot.ts'
 
 /**
@@ -54,6 +55,7 @@ export const router = {
   assets: assetRouter,
   moodboards: moodboardRouter,
   shotGear: shotGearRouter,
+  shotReferences: shotReferenceRouter,
 }
 
 export type AppRouter = typeof router

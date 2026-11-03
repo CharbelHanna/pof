@@ -106,3 +106,39 @@ export const reorderShotsSchema = z.object({
   orderedIds: z.array(z.uuid()).min(1).max(500),
 })
 export type ReorderShotsInput = z.infer<typeof reorderShotsSchema>
+
+// --- reference images -----------------------------------------------------
+//
+// Distinct from a moodboard item. A moodboard is the feel of the whole
+// shoot, assembled beforehand; a shot reference is an instruction for one
+// frame, held up on the day. The same file is often both, which is why
+// neither owns it.
+
+export const addShotReferenceSchema = z.object({
+  id: z.uuid().optional(),
+  shotId: z.uuid(),
+  assetId: z.uuid(),
+  /** Omitted means "append after the existing references". */
+  position: position.optional(),
+  /** What to take from it: "this crop", "hands like this", "not the colour". */
+  note: longText.nullable().optional(),
+})
+export type AddShotReferenceInput = z.infer<typeof addShotReferenceSchema>
+
+export const updateShotReferenceSchema = z.object({
+  id: z.uuid(),
+  position: position.optional(),
+  note: longText.nullable().optional(),
+})
+export type UpdateShotReferenceInput = z.infer<typeof updateShotReferenceSchema>
+
+export const listShotReferencesSchema = z.object({
+  shotId: z.uuid().optional(),
+  cursor: z.uuid().optional(),
+  limit: queryNumber.int().min(1).max(200).default(100),
+  updatedSince: z.coerce.date().optional(),
+  includeDeleted: queryBoolean.default(false),
+})
+export type ListShotReferencesInput = z.infer<typeof listShotReferencesSchema>
+
+export const shotReferenceIdSchema = z.object({ id: z.uuid() })

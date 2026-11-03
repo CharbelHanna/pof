@@ -27,3 +27,4 @@ export { createS3Storage, type S3StorageOptions } from './adapters/s3-storage.ts
 export { processAsset, VARIANT_SPECS } from './modules/assets/process.service.ts'
 export * as moodboards from './modules/assets/moodboard.service.ts'
 export { getUsage, recomputeUsage, assetFootprint } from './modules/assets/usage.service.ts'
+export * as shotReferences from './modules/preparation/shot-reference.service.ts'
