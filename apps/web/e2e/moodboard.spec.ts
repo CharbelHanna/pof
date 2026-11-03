@@ -14,7 +14,9 @@ import { expect, test, type Page } from '@playwright/test'
  * URLs pointed at the compose-internal hostname.
  */
 
-const fixture = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'reference.png')
+const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
+const fixture = join(fixtures, 'reference.png')
+const fixtureB = join(fixtures, 'reference-b.png')
 
 function uniqueEmail(): string {
   return `board-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@pof.test`
@@ -88,4 +90,67 @@ test('an unsupported file is refused before anything is uploaded', async ({ page
   // upload to be told the file was never acceptable.
   await expect(page.getByText(/not supported/i)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Open reference' })).toBeHidden()
+})
+
+test('references can be rearranged, and the order survives a reload', async ({ page }) => {
+  await signUpAndOpenShoot(page)
+
+  // Two different files, so a swap is observable.
+  await page.getByLabel('Add references').setInputFiles([fixture, fixtureB])
+  await expect(page.getByRole('button', { name: 'Open reference' })).toHaveCount(2, {
+    timeout: 40_000,
+  })
+
+  /**
+   * Identify tiles by the object their image points at, not by the handle
+   * labels — those are generated from the index, so "1 of 2" is true
+   * whatever the order is and asserting on it would pass against a reorder
+   * that did nothing.
+   *
+   * The signature in a presigned URL changes on every refetch; the path
+   * does not, and it carries the asset id.
+   */
+  const firstTilePath = async () => {
+    const src = await page.locator('li img').first().getAttribute('src')
+    return new URL(src!).pathname
+  }
+
+  const before = await firstTilePath()
+
+  /**
+   * Driven by keyboard rather than a synthetic pointer drag. A scripted
+   * mouse gesture mostly proves Playwright can dispatch pointer events; the
+   * keyboard path exercises the same reposition and the same save, and also
+   * asserts the thing that would otherwise go untested — that the
+   * arrangement is reachable without a mouse at all.
+   */
+  await page
+    .getByRole('button', { name: /^Reorder reference/ })
+    .first()
+    .focus()
+
+  /**
+   * Wait for the save, not just the optimistic shuffle. Reloading could
+   * otherwise outrun the request and the test would pass against a server
+   * that stored nothing.
+   */
+  const saved = page.waitForResponse(
+    /*
+     * The RPC path, not the REST one. The UI uses the typed client, which
+     * posts to /api/rpc/<router>/<procedure>; `/moodboard-items/reorder` is
+     * the OpenAPI route and is never called from the browser — matching it
+     * waited for a request that would never arrive.
+     */
+    (response) => response.url().includes('moodboards/reorder') && response.ok(),
+  )
+  await page.keyboard.press('ArrowRight')
+  await saved
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Open reference' })).toHaveCount(2, {
+    timeout: 30_000,
+  })
+
+  // A different image is now first, read back from the database.
+  expect(await firstTilePath()).not.toBe(before)
 })
