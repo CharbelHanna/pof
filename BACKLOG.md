@@ -8,6 +8,77 @@ When an item is picked up, move it into the roadmap or open an issue for it.
 
 ---
 
+## Password reset
+
+Let a photographer who has forgotten their password regain access without
+contacting anyone.
+
+**Why it matters.** Email and password is currently the only way in, so a
+forgotten password means a permanently lost account and every shoot in it.
+There is no admin recovery path either.
+
+**What it needs.**
+
+Better Auth already implements the flow (`forgetPassword` / `resetPassword`
+endpoints and a `sendResetPassword` callback), so the authentication logic is
+not the work. The real dependency is **being able to send email at all**:
+
+- `MAIL_PROVIDER` currently defaults to `console`, which discards mail. The env
+  schema already rejects that for a deployed app, so nothing is silently broken
+  in production — but nothing can be sent either.
+- The `MailPort` described in the architecture is **not implemented yet**; only
+  `StoragePort` exists. It needs the port plus two adapters: SMTP (the
+  self-host escape hatch, and what local development should use) and Resend.
+- Local development needs a mail catcher — a `mailpit` service in
+  `docker-compose.yml` — so reset links can be exercised without a real
+  provider and without the e2e suite depending on the internet.
+- Two pages: request a reset, and set a new password from the token.
+
+**Worth deciding when picked up.**
+
+- Whether to enable email verification on signup at the same time. It shares
+  all of the same infrastructure, and turning it on later invalidates the
+  assumption that every existing account has a reachable address.
+- Rate limiting on the request endpoint, so it cannot be used to enumerate
+  which email addresses have accounts, or to mail-bomb someone.
+
+**Rough size.** Small once mail exists; most of the cost is the mail
+infrastructure, which is a prerequisite for deliverable reminders in Phase 6
+anyway.
+
+---
+
+## Location search with real coordinates
+
+Attach a location to a shoot, chosen through a place search rather than typed
+as free text.
+
+**Planned for Phase 5**, together with sun and weather. Recording the specific
+requirement here because it changes what Phase 5 can deliver:
+
+**Coordinates are not a nice-to-have — they are the whole feature.** Golden
+hour, blue hour and sunrise/sunset are computed from latitude, longitude and
+date. A free-text address like "Glen Coe" cannot produce any of them. So the
+location field has to resolve to real coordinates at the point of entry, which
+means a geocoding search rather than a text box.
+
+This matters most for landscape work, where the light window _is_ the plan, but
+it applies to any outdoor session.
+
+**Worth deciding when picked up.**
+
+- Which geocoding provider, and under what licence. The same trap as weather:
+  several are free for non-commercial use only. Nominatim (OpenStreetMap) is
+  free with a usage policy; Photon and MapTiler are alternatives. It belongs
+  behind a port like `WeatherPort`, so the choice is reversible.
+- Coordinates should be stored on the shoot and session regardless of which
+  provider found them, so the sun calculation never depends on a third party
+  being reachable. SunCalc runs locally with no API at all.
+- Locations are worth reusing — a photographer returns to the same places —
+  which is why the plan already has a `location` table rather than a column.
+
+---
+
 ## Trip dates, and what "delivery date" assumes
 
 `shoot.delivery_date` is a single date meaning "when the edit is due with the
@@ -95,188 +166,3 @@ one, which matches how storage and weather are handled elsewhere.
 
 Display itself needs no Google dependency: MapLibre GL with a tile URL from
 configuration, as already planned for Phase 5.
-
----
-
-## Crew and gear at the session level
-
-Let a photographer say that an assistant is only coming to the studio day, or
-that the 85mm is only needed for the rooftop session.
-
-**Why it matters.** Crew size drives call times and what a client is billed
-for, and a kit list that cannot distinguish "in the bag all day" from "only
-for the second location" is the kind of plan people stop trusting and go back
-to a notes app for.
-
-**What it needs.** The two halves are not the same size, which is the useful
-part of this entry:
-
-- **Crew is already modelled.** `crew_member.session_id` exists and is
-  nullable, with a composite foreign key ensuring the session belongs to the
-  same shoot. Only the UI never exposes it, so every crew member is implicitly
-  whole-shoot. This is a form change, not a migration.
-- **Gear is not.** `shoot_gear` has `shoot_id` only. Session scoping needs a
-  nullable `session_id`, the same composite foreign key, and a migration.
-
-**Worth deciding when picked up.** Whether `packed` still makes sense per
-session. Packing happens once for the day, so a per-session row that is
-"packed" may be a category error — see the reasoning on
-`shot_gear_requirement`, which deliberately has no `packed` for that reason.
-
-**Rough size.** Small for crew, small-to-medium for gear.
-
----
-
-## Create a campaign from the shoot page
-
-Offer "new campaign" inline in the campaign selector on a shoot, instead of
-making someone leave, create it, and come back.
-
-**Why it matters.** Campaigns are discovered mid-flow: you create the second
-shoot for a client and only then realise the two belong together. Today that
-means abandoning the page you are on.
-
-**What it needs.** An inline create in the selector, reusing
-`campaigns.create`, then selecting the new campaign without a navigation. The
-mutation already exists; this is a UI affordance.
-
-**Rough size.** Small.
-
----
-
-## Save a location without searching for it
-
-Let someone type a name and an address directly — "My Studio" → "12 Example
-Street" — rather than only picking from geocoder results.
-
-**Why it matters.** `location-picker.tsx` only creates a location from a
-search result, so anywhere the geocoder does not know cannot be saved at all:
-a private studio, a client's house, a field with a gate reference. These are
-exactly the places a photographer returns to most.
-
-**What it needs.** A manual entry path alongside search. Coordinates are the
-open question, since sun times depend on them — either optional (and sun times
-degrade), or entered by hand, or taken from a map pin once Phase 5's map
-lands.
-
-**Worth deciding when picked up.** Whether a manual location without
-coordinates is allowed at all, given `latitude`/`longitude` are currently
-`NOT NULL`.
-
-**Rough size.** Small, unless coordinates become optional — that is a
-migration and a change to every sun-time call site.
-
----
-
-## Tags
-
-Free-form labels across shoots and locations: `indoor`, `outdoor`, `seaside`,
-`mountain`, `newborn`, `family`.
-
-**Why it matters.** The genre registry answers "what kind of shoot is this",
-but not the cross-cutting questions people actually search on — every seaside
-location, every newborn session. Those cut across genres and will never be a
-fixed list.
-
-**What it needs.** A `tag` table plus join tables, or a denormalised text
-array with a GIN index. Worth noting the precedent already set for free text
-(`crew_member.role`, `gear_item.category`, `shot.framing`): nothing branches
-on these values, so they should not become a reference table requiring a
-migration per new word.
-
-**Worth deciding when picked up.** Whether tags are per-workspace or global,
-and whether they are typed (location tags vs shoot tags) or one shared
-vocabulary.
-
-**Rough size.** Medium — the schema is easy, the filtering UI is the work.
-
----
-
-## Colours render differently on Android and iOS
-
-The palette does not look the same in Android's default browser as it does on
-an iPhone.
-
-**Why it matters.** The accent is described in `globals.css` as "golden hour,
-the product's emotional centre". A palette that shifts between the two phones
-most clients hold undermines that, and it is invisible from a desktop.
-
-**What it needs.** Investigation before a fix. The likely cause is the palette
-being authored in `oklch()`: browsers differ in whether they clamp
-out-of-sRGB-gamut colours or map them into the display's P3 gamut, and the
-accent is saturated enough to sit near that boundary. Candidates:
-
-- Add sRGB fallbacks alongside each `oklch()` declaration.
-- Pull the accent chroma inside the sRGB gamut so there is nothing to clamp.
-- Confirm first with a real device or BrowserStack; a desktop emulator will
-  not reproduce a gamut difference.
-
-**Rough size.** Unknown until reproduced. The fix is probably small; the
-reproduction is the work.
-
----
-
-## Email verification on sign-up
-
-Confirm an address belongs to the person who entered it before the account is
-fully usable.
-
-**Why it matters.** `requireEmailVerification` is `false`, so a typo in an
-address creates a working account that can never receive a password reset —
-which, now that reset exists, is the one thing that makes an account
-unrecoverable.
-
-**What it needs.** The mail infrastructure already exists (`MailPort`, three
-adapters, Mailpit locally), so this is Better Auth configuration plus a
-verification page and a "resend" path.
-
-**Worth deciding when picked up.** Whether verification blocks use or merely
-nags. Blocking is safer; it also means an unverified user cannot plan the
-shoot they just signed up to plan. Also: every existing account predates this
-and has no verified address.
-
-**Rough size.** Small.
-
----
-
-## The shoot page does not separate shoot scope from session scope
-
-It is not visually clear which things belong to the shoot as a whole and which
-belong to one session.
-
-**Why it matters.** The distinction is real and load-bearing — shots, crew and
-gear all attach at either level, with a nullable `session_id` meaning "the
-whole shoot". If the page does not express that, people cannot tell what they
-are editing, and the flexibility reads as inconsistency instead.
-
-**What it needs.** A layout change rather than a data change: group
-shoot-level sections distinctly from per-session ones, and label scope where
-something can be either. Related to the crew-and-gear entry above, which adds
-a second thing that can sit at both levels.
-
-**Rough size.** Medium. Mostly design.
-
----
-
-## Sun times only reflect a session's first location
-
-A session with several stops shows light conditions for the first one only.
-
-**Why it matters.** Sessions became routes when `session_location` landed, and
-a route exists precisely because the stops differ. Showing one set of times
-for all of them is wrong in exactly the case the feature was built for — a
-layby, a lochside and a ridge do not share a horizon.
-
-**What it needs.** `session-stops.tsx` currently takes `stops[0]` as the
-primary and renders a single `SunTimes`. Options:
-
-- Sun times per stop, inline in the route list.
-- One set of times, but centred on the stop whose scheduled time matches.
-- Keep the primary as the headline and let a stop be expanded.
-
-**Worth deciding when picked up.** Whether every stop should have its own
-time window, which is the `trip dates` entry's territory and probably wants
-solving together.
-
-**Rough size.** Small for per-stop times; medium if stops gain their own
-times.

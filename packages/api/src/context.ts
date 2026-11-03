@@ -1,4 +1,4 @@
-import type { GeocodingPort } from '@pof/core/ports'
+import type { GeocodingPort, StoragePort } from '@pof/core/ports'
 import type { Database, TenantContext } from '@pof/db'
 
 /**
@@ -19,6 +19,14 @@ export interface ApiContext {
    * including sun times, works without it.
    */
   geocoding?: GeocodingPort | undefined
+  /**
+   * Optional for the same reason, but the consequence differs: without it
+   * uploads cannot be offered at all, rather than degrading. Procedures that
+   * need it say so explicitly instead of assuming it is there, so a
+   * misconfigured deployment fails on the upload endpoint with a clear
+   * message rather than throwing on a null somewhere further in.
+   */
+  storage?: StoragePort | undefined
 }
 
 export interface AuthenticatedSession {

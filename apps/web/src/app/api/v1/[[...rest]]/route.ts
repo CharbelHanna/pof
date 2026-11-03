@@ -3,6 +3,7 @@ import { router } from '@pof/api'
 
 import { getDb } from '~/lib/db.ts'
 import { getGeocoding } from '~/lib/geocoding.ts'
+import { getStorage } from '~/lib/storage.ts'
 import { resolveSession } from '~/lib/session.ts'
 
 /**
@@ -26,6 +27,7 @@ async function handle(request: Request): Promise<Response> {
     context: {
       db: getDb(),
       geocoding: getGeocoding(),
+      storage: getStorage(),
       session: await resolveSession(request.headers),
     },
   })

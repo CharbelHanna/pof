@@ -1,6 +1,6 @@
-import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
+import { testStorage } from '../testing/storage.ts'
 import { createS3Storage } from './s3-storage.ts'
 
 /**
@@ -14,10 +14,7 @@ import { createS3Storage } from './s3-storage.ts'
  * docker-compose, which speaks the same API as R2 and S3.
  */
 
-const endpoint = process.env.STORAGE_ENDPOINT ?? 'http://localhost:8333'
-const bucket = process.env.STORAGE_BUCKET ?? 'pof-assets'
-const accessKeyId = process.env.STORAGE_ACCESS_KEY_ID ?? 'pofdev'
-const secretAccessKey = process.env.STORAGE_SECRET_ACCESS_KEY ?? 'pofdevsecret'
+const { endpoint, bucket, accessKeyId, secretAccessKey } = testStorage()
 
 const storage = createS3Storage({
   bucket,
@@ -30,21 +27,6 @@ const storage = createS3Storage({
 
 /** Unique per run so parallel workers cannot collide on a key. */
 const prefix = `w/test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-
-beforeAll(async () => {
-  const client = new S3Client({
-    region: 'auto',
-    credentials: { accessKeyId, secretAccessKey },
-    endpoint,
-    forcePathStyle: true,
-  })
-
-  try {
-    await client.send(new CreateBucketCommand({ Bucket: bucket }))
-  } catch {
-    // Already there, which is the normal case after the first run.
-  }
-})
 
 describe('createUploadTarget', () => {
   it('issues a target the browser can actually PUT to', async () => {
