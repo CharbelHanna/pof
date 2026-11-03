@@ -1,6 +1,8 @@
 import {
+  asset,
   gearItem,
   location,
+  moodboard,
   shoot,
   shootSession,
   shot,
@@ -127,6 +129,38 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
     storageKey: `w/${workspaceId}/a/${crypto.randomUUID()}/original.jpg`,
     mime: 'image/jpeg',
   }),
+
+  moodboard: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe board parent' })
+      .returning({ id: shoot.id })
+
+    return { workspaceId, shootId: parent!.id, name: 'isolation probe board' }
+  },
+
+  moodboardItem: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe item parent' })
+      .returning({ id: shoot.id })
+
+    const [board] = await tx
+      .insert(moodboard)
+      .values({ workspaceId, shootId: parent!.id, name: 'isolation probe item board' })
+      .returning({ id: moodboard.id })
+
+    const [file] = await tx
+      .insert(asset)
+      .values({
+        workspaceId,
+        storageKey: `w/${workspaceId}/a/${crypto.randomUUID()}/original.jpg`,
+        mime: 'image/jpeg',
+      })
+      .returning({ id: asset.id })
+
+    return { workspaceId, moodboardId: board!.id, assetId: file!.id }
+  },
 
   shootSession: async (workspaceId, tx) => {
     const [parent] = await tx

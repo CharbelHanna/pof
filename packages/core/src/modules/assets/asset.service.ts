@@ -2,6 +2,7 @@ import { and, asc, eq, gt, gte, isNull, sql, type SQL } from 'drizzle-orm'
 import { schema, withTenant, type Database, type TenantContext } from '@pof/db'
 import {
   MAX_ASSET_BYTES,
+  parseVariants,
   type ConfirmUploadInput,
   type CreateUploadInput,
   type ListAssetsInput,
@@ -229,17 +230,27 @@ export async function listAssets(db: Database, ctx: TenantContext, input: ListAs
   })
 }
 
-/** A time-limited URL for one asset's original. */
+/**
+ * A time-limited URL for one rendered size of an asset.
+ *
+ * Falls back to the original whenever the requested variant is missing,
+ * which is the normal state before the worker has run. A grid can then
+ * render something immediately rather than showing holes until processing
+ * finishes — at the cost of briefly serving a full-size file, which is a
+ * better trade than an empty page.
+ */
 export async function createReadUrl(
   db: Database,
   ctx: TenantContext,
   storage: StoragePort,
   id: string,
+  variant: 'thumb' | 'grid' | 'full' | 'original' = 'original',
+  format: 'avif' | 'webp' = 'webp',
   ttlSeconds = 300,
 ): Promise<string> {
   const row = await withTenant(db, ctx, async (tx) => {
     const [found] = await tx
-      .select({ storageKey: asset.storageKey })
+      .select({ storageKey: asset.storageKey, variants: asset.variants })
       .from(asset)
       .where(and(eq(asset.id, id), visibility(ctx.workspaceId, false)))
       .limit(1)
@@ -247,6 +258,11 @@ export async function createReadUrl(
     if (!found) throw new NotFoundError('Asset', id)
     return found
   })
+
+  if (variant !== 'original') {
+    const key = parseVariants(row.variants)[variant]?.[format]?.key
+    if (key) return storage.createReadUrl(key, ttlSeconds)
+  }
 
   // Re-read under withTenant before signing: a signed URL outlives the
   // request, so the entitlement check cannot be skipped on the grounds that

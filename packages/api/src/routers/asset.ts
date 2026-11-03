@@ -2,6 +2,7 @@ import { assets } from '@pof/core'
 import type { StoragePort } from '@pof/core/ports'
 import {
   assetIdSchema,
+  assetUrlSchema,
   confirmUploadSchema,
   createUploadSchema,
   listAssetsSchema,
@@ -69,13 +70,15 @@ export const assetRouter = {
    */
   readUrl: authed
     .route({ method: 'GET', path: '/assets/{id}/url', summary: 'Get a read URL' })
-    .input(assetIdSchema)
+    .input(assetUrlSchema)
     .handler(async ({ input, context }) => ({
       url: await assets.createReadUrl(
         context.db,
         context.tenant,
         requireStorage(context.storage),
         input.id,
+        input.variant,
+        input.format,
       ),
     })),
 

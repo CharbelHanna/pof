@@ -124,6 +124,22 @@ export default defineConfig({
       SMTP_HOST: 'localhost',
       SMTP_PORT: '1025',
       MAIL_FROM: 'noreply@pof.local',
+      /**
+       * Force storage at the compose container too, for the same reason:
+       * the upload suite performs a real PUT, so it needs credentials that
+       * actually work rather than whatever .env happens to hold. These are
+       * the identities in storage/s3-identities.json.
+       *
+       * `localhost`, not the `storage` service name: this server runs on
+       * the host. That also makes the presigned URL reachable from the
+       * browser without a separate public endpoint.
+       */
+      STORAGE_ENDPOINT: 'http://localhost:8333',
+      STORAGE_BUCKET: 'pof-assets',
+      STORAGE_REGION: 'auto',
+      STORAGE_ACCESS_KEY_ID: 'pofdev',
+      STORAGE_SECRET_ACCESS_KEY: 'pofdevsecret',
+      STORAGE_FORCE_PATH_STYLE: 'true',
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -74,6 +74,21 @@ export type ListAssetsInput = z.infer<typeof listAssetsSchema>
 
 export const assetIdSchema = z.object({ id: z.uuid() })
 
+/**
+ * Ask for a URL to one rendered size.
+ *
+ * `original` is the fallback and the only thing that exists before the
+ * worker has run — asking for `thumb` on a `pending` asset gets the
+ * original rather than an error, so a grid can render something immediately
+ * instead of waiting for processing.
+ */
+export const assetUrlSchema = z.object({
+  id: z.uuid(),
+  variant: z.enum(['thumb', 'grid', 'full', 'original']).default('grid'),
+  format: z.enum(['avif', 'webp']).default('webp'),
+})
+export type AssetUrlInput = z.infer<typeof assetUrlSchema>
+
 // --- derivatives ----------------------------------------------------------
 //
 // The worker writes `asset.variants` as jsonb; this is the shape it promises

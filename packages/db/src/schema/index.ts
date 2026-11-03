@@ -25,6 +25,7 @@ export * from './domain/location.ts'
 export * from './domain/shot.ts'
 export * from './domain/session-location.ts'
 export * from './domain/asset.ts'
+export * from './domain/moodboard.ts'
 
 import { campaign } from './domain/campaign.ts'
 import { shootSession } from './domain/session.ts'
@@ -35,6 +36,7 @@ import { location } from './domain/location.ts'
 import { shot } from './domain/shot.ts'
 import { sessionLocation } from './domain/session-location.ts'
 import { asset } from './domain/asset.ts'
+import { moodboard, moodboardItem } from './domain/moodboard.ts'
 
 /**
  * Every workspace-scoped table, keyed by table name.
@@ -58,6 +60,8 @@ export const tenantTables = {
   shotGearRequirement,
   sessionLocation,
   asset,
+  moodboard,
+  moodboardItem,
 } as const
 
 export type TenantTableName = keyof typeof tenantTables

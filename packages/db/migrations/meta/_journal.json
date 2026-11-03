@@ -141,6 +141,20 @@
       "when": 1793720500489,
       "tag": "0019_asset_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793724831002,
+      "tag": "0020_wild_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793724836080,
+      "tag": "0021_moodboard_rls",
+      "breakpoints": true
     }
   ]
 }

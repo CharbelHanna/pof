@@ -2,6 +2,7 @@ import { shootTypes } from '@pof/core'
 
 import { authed, pub } from './base.ts'
 import { assetRouter } from './routers/asset.ts'
+import { moodboardRouter } from './routers/moodboard.ts'
 import { campaignRouter } from './routers/campaign.ts'
 import { crewRouter } from './routers/crew.ts'
 import { gearItemRouter, shootGearRouter } from './routers/gear.ts'
@@ -51,6 +52,7 @@ export const router = {
   sessionLocations: sessionLocationRouter,
   shots: shotRouter,
   assets: assetRouter,
+  moodboards: moodboardRouter,
   shotGear: shotGearRouter,
 }
 
