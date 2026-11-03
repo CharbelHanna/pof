@@ -9,6 +9,7 @@ import {
 } from '@pof/schemas'
 
 import { NotFoundError, ValidationError } from '../../errors.ts'
+import { applyUsageDelta, assetFootprint } from './usage.service.ts'
 import { JOB_NAMES, type JobQueuePort } from '../../ports/jobs.ts'
 import type { StoragePort, UploadTarget } from '../../ports/storage.ts'
 
@@ -174,6 +175,18 @@ export async function confirmUpload(
       .returning()
 
     if (!confirmed) throw new NotFoundError('Asset', row.id)
+
+    /**
+     * Counted here, not at creation: this is the first moment the bytes are
+     * known to exist, and the size is the real one read back from storage.
+     * A `pending` row has nothing behind it and must not count.
+     *
+     * In the same transaction as the status change, so a crash between the
+     * two cannot leave the counter permanently wrong. Safe against a repeat
+     * because the guard above returns early once the status is `uploaded`.
+     */
+    await applyUsageDelta(tx, ctx.workspaceId, { bytes: head.size, assets: 1 })
+
     return confirmed
   })
 
@@ -286,6 +299,24 @@ export async function deleteAsset(db: Database, ctx: TenantContext, id: string) 
       .returning()
 
     if (!row) throw new NotFoundError('Asset', id)
+
+    /**
+     * Give back exactly what this asset was counted for — the original plus
+     * whatever derivatives exist — and only if it was ever counted.
+     *
+     * `uploadedAt` is the test for that. An asset deleted while still
+     * `pending` never contributed, and subtracting for it would drive the
+     * counter below what the workspace actually holds. The visibility
+     * predicate guarantees this runs once, since a second delete matches
+     * nothing.
+     */
+    if (row.uploadedAt) {
+      await applyUsageDelta(tx, ctx.workspaceId, {
+        bytes: -assetFootprint(row),
+        assets: -1,
+      })
+    }
+
     return row
   })
 }

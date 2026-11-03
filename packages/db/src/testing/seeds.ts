@@ -162,6 +162,12 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
     return { workspaceId, moodboardId: board!.id, assetId: file!.id }
   },
 
+  /**
+   * One row per workspace, keyed by it — so unlike every other seed there
+   * is no second id, and the probe is the whole row.
+   */
+  workspaceUsage: async (workspaceId) => ({ workspaceId, storageBytes: 0, assetCount: 0 }),
+
   shootSession: async (workspaceId, tx) => {
     const [parent] = await tx
       .insert(shoot)
