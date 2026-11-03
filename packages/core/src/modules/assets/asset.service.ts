@@ -8,6 +8,7 @@ import {
 } from '@pof/schemas'
 
 import { NotFoundError, ValidationError } from '../../errors.ts'
+import { JOB_NAMES, type JobQueuePort } from '../../ports/jobs.ts'
 import type { StoragePort, UploadTarget } from '../../ports/storage.ts'
 
 /**
@@ -114,6 +115,13 @@ export async function confirmUpload(
   ctx: TenantContext,
   storage: StoragePort,
   input: ConfirmUploadInput,
+  /**
+   * Optional so the upload path still works with no worker running — the
+   * asset simply stays `uploaded` and can be processed later. Making it
+   * required would mean a queue outage blocked uploads entirely, which is a
+   * worse failure than a late thumbnail.
+   */
+  jobs?: JobQueuePort,
 ) {
   const row = await withTenant(db, ctx, async (tx) => {
     const [found] = await tx
@@ -157,16 +165,40 @@ export async function confirmUpload(
     throw new ValidationError('That file is larger than the 50MB limit', 'id')
   }
 
-  return withTenant(db, ctx, async (tx) => {
-    const [updated] = await tx
+  const updated = await withTenant(db, ctx, async (tx) => {
+    const [confirmed] = await tx
       .update(asset)
       .set({ status: 'uploaded', bytes: head.size, uploadedAt: new Date() })
       .where(and(eq(asset.id, row.id), visibility(ctx.workspaceId, false)))
       .returning()
 
-    if (!updated) throw new NotFoundError('Asset', row.id)
-    return updated
+    if (!confirmed) throw new NotFoundError('Asset', row.id)
+    return confirmed
   })
+
+  /**
+   * Queued after the status is committed, so a worker cannot pick the job up
+   * and find the row still `pending`.
+   *
+   * A failure to enqueue is logged, not thrown: the bytes are safely stored
+   * and the row is correct, so failing the request here would tell the user
+   * their upload did not work when it did. The asset stays `uploaded` and
+   * can be swept.
+   */
+  if (jobs) {
+    try {
+      await jobs.enqueue(
+        JOB_NAMES.assetProcess,
+        { workspaceId: ctx.workspaceId, assetId: updated.id },
+        // Confirming twice must not render six derivatives twice.
+        { singletonKey: `asset.process:${updated.id}` },
+      )
+    } catch (error) {
+      console.error('[assets] could not queue processing for', updated.id, error)
+    }
+  }
+
+  return updated
 }
 
 export async function listAssets(db: Database, ctx: TenantContext, input: ListAssetsInput) {

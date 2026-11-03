@@ -1,6 +1,11 @@
 import { serverEnv } from '@pof/config/env'
+import { createS3Storage } from '@pof/core'
+import { createDatabase } from '@pof/db'
 // Named export: pg-boss dropped its default export in v12.
 import { PgBoss } from 'pg-boss'
+
+import { createSharpImage } from './image.ts'
+import { registerAssetProcess } from './jobs/asset-process.ts'
 
 /**
  * Background worker.
@@ -58,7 +63,30 @@ async function main(): Promise<void> {
   })
 
   await boss.start()
-  console.log('[worker] started; no queues registered yet (Phase 2 adds the first)')
+
+  /**
+   * One database handle and one storage client for the process, not per
+   * job. Both pool connections; rebuilding them per image would add a
+   * handshake to every render.
+   *
+   * The app role, not the owner — the worker is subject to the same
+   * row-level security as a request, which is what makes `withTenant` in
+   * the handlers meaningful rather than decorative.
+   */
+  const { db, client } = createDatabase(env.DATABASE_URL, { max: 5 })
+
+  const storage = createS3Storage({
+    bucket: env.STORAGE_BUCKET,
+    region: env.STORAGE_REGION,
+    accessKeyId: env.STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY,
+    ...(env.STORAGE_ENDPOINT ? { endpoint: env.STORAGE_ENDPOINT } : {}),
+    forcePathStyle: env.STORAGE_FORCE_PATH_STYLE,
+  })
+
+  await registerAssetProcess(boss, { db, storage, image: createSharpImage() })
+
+  console.log('[worker] started; asset.process registered')
 
   const shutdown = async (signal: string) => {
     console.log(`[worker] ${signal} received, draining…`)
@@ -66,6 +94,7 @@ async function main(): Promise<void> {
     // matters for the image pipeline where a half-written derivative would
     // leave an asset stuck in `processing`.
     await boss.stop({ graceful: true })
+    await client.end({ timeout: 5 })
     process.exit(0)
   }
 

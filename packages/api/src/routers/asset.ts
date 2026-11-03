@@ -48,7 +48,13 @@ export const assetRouter = {
     .route({ method: 'POST', path: '/assets/{id}/confirm', summary: 'Confirm an upload' })
     .input(confirmUploadSchema)
     .handler(({ input, context }) =>
-      assets.confirmUpload(context.db, context.tenant, requireStorage(context.storage), input),
+      assets.confirmUpload(
+        context.db,
+        context.tenant,
+        requireStorage(context.storage),
+        input,
+        context.jobs,
+      ),
     ),
 
   list: authed

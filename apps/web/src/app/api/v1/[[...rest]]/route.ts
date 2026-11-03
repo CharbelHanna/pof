@@ -3,6 +3,7 @@ import { router } from '@pof/api'
 
 import { getDb } from '~/lib/db.ts'
 import { getGeocoding } from '~/lib/geocoding.ts'
+import { getJobQueue } from '~/lib/jobs.ts'
 import { getStorage } from '~/lib/storage.ts'
 import { resolveSession } from '~/lib/session.ts'
 
@@ -28,6 +29,7 @@ async function handle(request: Request): Promise<Response> {
       db: getDb(),
       geocoding: getGeocoding(),
       storage: getStorage(),
+      jobs: getJobQueue(),
       session: await resolveSession(request.headers),
     },
   })
