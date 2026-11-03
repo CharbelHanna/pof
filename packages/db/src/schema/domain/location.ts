@@ -1,4 +1,13 @@
-import { boolean, doublePrecision, index, pgTable, text, unique } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import {
+  boolean,
+  doublePrecision,
+  index,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 
 import { organization } from '../auth.ts'
 import { primaryId, softDelete, timestamps, workspaceId } from '../columns.ts'
@@ -48,6 +57,26 @@ export const location = pgTable(
     ...softDelete,
   },
   (table) => [
+    /**
+     * One row per place per workspace, when the place came from a geocoder.
+     *
+     * Without this, `createLocation` only guarded the primary key — which the
+     * client mints fresh on every pick — so selecting the same search result
+     * twice silently created a second row. The dropdown then listed the same
+     * place repeatedly and the duplicates were indistinguishable.
+     *
+     * Partial on two conditions, both load-bearing:
+     *
+     *   provider_id is not null — a location typed in by hand has none, and
+     *     those must be free to repeat; two studios may share a name.
+     *   deleted_at is null — otherwise deleting a place would permanently
+     *     bar re-adding it, since the tombstone would keep occupying the
+     *     slot. Soft deletes are kept for sync, not to reserve names.
+     */
+    uniqueIndex('location_workspace_provider_key')
+      .on(table.workspaceId, table.provider, table.providerId)
+      .where(sql`${table.providerId} is not null and ${table.deletedAt} is null`),
+
     unique('location_workspace_id_id_key').on(table.workspaceId, table.id),
     index('location_workspace_updated_idx').on(table.workspaceId, table.updatedAt),
   ],

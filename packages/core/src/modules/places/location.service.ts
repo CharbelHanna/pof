@@ -46,14 +46,50 @@ export async function createLocation(db: Database, ctx: TenantContext, input: Cr
         permitRequired: input.permitRequired,
         notes: input.notes ?? null,
       })
-      .onConflictDoNothing({ target: location.id })
+      /**
+       * No target, so BOTH unique constraints are tolerated: the primary
+       * key, and the partial index that keeps one row per geocoded place.
+       * Naming only the id would let a new id carrying an existing place
+       * raise a constraint violation instead of returning nothing.
+       */
+      .onConflictDoNothing()
       .returning()
 
     if (row) return row
 
+    // A replayed id is the offline-sync case: the same create arriving
+    // twice. Checked first because it is the exact-match answer.
     const existing = input.id ? await find(tx, ctx.workspaceId, input.id) : undefined
-    if (!existing) throw new NotFoundError('Location', input.id)
-    return existing
+    if (existing) return existing
+
+    /**
+     * Two different conflicts reach this point, and they need different
+     * answers.
+     *
+     * The same PLACE arriving under a new id is the other one — the picker
+     * mints an id per selection, so choosing the same search result twice
+     * used to create a second row, and the dropdown then listed it twice
+     * with nothing to tell the copies apart. Returning the place that is
+     * already saved is what the user meant by picking it.
+     */
+    if (input.providerId) {
+      const [samePlace] = await tx
+        .select()
+        .from(location)
+        .where(
+          and(
+            eq(location.workspaceId, ctx.workspaceId),
+            eq(location.providerId, input.providerId),
+            input.provider ? eq(location.provider, input.provider) : isNull(location.provider),
+            isNull(location.deletedAt),
+          ),
+        )
+        .limit(1)
+
+      if (samePlace) return samePlace
+    }
+
+    throw new NotFoundError('Location', input.id)
   })
 }
 
