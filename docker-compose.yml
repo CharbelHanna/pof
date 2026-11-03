@@ -151,6 +151,10 @@ services:
       DATABASE_URL: postgresql://pof_app:${POF_APP_PASSWORD:-app_password}@postgres:5432/pof
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-development-secret-not-for-production-use}
       STORAGE_ENDPOINT: http://storage:8333
+      # Where the BROWSER uploads to. The server reaches storage by its
+      # service name on the compose network; a browser cannot. A presigned
+      # URL signs its host, so uploads need one signed for this name.
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:8333}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-pof-assets}
       STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-pofdev}
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}
@@ -188,6 +192,10 @@ services:
       DATABASE_URL: postgresql://pof_app:${POF_APP_PASSWORD:-app_password}@postgres:5432/pof
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-development-secret-not-for-production-use}
       STORAGE_ENDPOINT: http://storage:8333
+      # Where the BROWSER uploads to. The server reaches storage by its
+      # service name on the compose network; a browser cannot. A presigned
+      # URL signs its host, so uploads need one signed for this name.
+      STORAGE_PUBLIC_ENDPOINT: ${STORAGE_PUBLIC_ENDPOINT:-http://localhost:8333}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-pof-assets}
       STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-pofdev}
       STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-pofdevsecret}

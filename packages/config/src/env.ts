@@ -88,6 +88,15 @@ const serverSchema = z
     // packages/core/src/ports/storage.ts for why the port is intent-shaped.
     // ---------------------------------------------------------------------
     STORAGE_ENDPOINT: optionalUrl(),
+    /**
+     * The host a browser should upload to, when it differs from the one the
+     * server uses. Set in docker-compose, where the server reaches storage
+     * at `http://storage:8333` on the compose network and a browser can only
+     * reach `http://localhost:8333`. A presigned URL signs its host, so one
+     * signed for the internal name is unusable from a browser. Leave unset
+     * in production, where there is one public endpoint.
+     */
+    STORAGE_PUBLIC_ENDPOINT: optionalUrl(),
     STORAGE_REGION: z.string().default('auto'),
     STORAGE_BUCKET: nonEmpty('STORAGE_BUCKET'),
     STORAGE_ACCESS_KEY_ID: nonEmpty('STORAGE_ACCESS_KEY_ID'),

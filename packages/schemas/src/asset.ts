@@ -73,3 +73,49 @@ export const listAssetsSchema = z.object({
 export type ListAssetsInput = z.infer<typeof listAssetsSchema>
 
 export const assetIdSchema = z.object({ id: z.uuid() })
+
+// --- derivatives ----------------------------------------------------------
+//
+// The worker writes `asset.variants` as jsonb; this is the shape it promises
+// and the one the UI reads. Declared here rather than inferred from the
+// column so a renderer gets a type rather than `unknown`, and so a change to
+// what the worker writes breaks at the contract instead of at a blank tile.
+
+export const VARIANT_NAMES = ['thumb', 'grid', 'full'] as const
+export const VARIANT_FORMATS = ['avif', 'webp'] as const
+
+export const variantSchema = z.object({
+  /** Object key, relative to the bucket. */
+  key: z.string(),
+  /** Actual rendered size — differs from the requested width for portraits. */
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  bytes: z.number().int().nonnegative(),
+})
+export type Variant = z.infer<typeof variantSchema>
+
+/**
+ * Every level is optional, including the whole map.
+ *
+ * An asset is `pending` or `uploaded` long before it has derivatives, and a
+ * processing failure leaves it with none at all. A schema that demanded them
+ * would make the normal in-between states unrepresentable.
+ */
+export const variantsSchema = z.partialRecord(
+  z.enum(VARIANT_NAMES),
+  z.partialRecord(z.enum(VARIANT_FORMATS), variantSchema),
+)
+export type Variants = z.infer<typeof variantsSchema>
+
+/**
+ * Read the variants off an asset row, tolerating anything unexpected.
+ *
+ * `variants` is jsonb, so the database cannot enforce the shape and an older
+ * row may predate a change to it. Returning an empty map rather than
+ * throwing means a malformed value costs one missing thumbnail, not a failed
+ * page render.
+ */
+export function parseVariants(value: unknown): Variants {
+  const result = variantsSchema.safeParse(value)
+  return result.success ? result.data : {}
+}

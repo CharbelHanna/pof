@@ -1,4 +1,4 @@
-import type { GeocodingPort, StoragePort } from '@pof/core/ports'
+import type { GeocodingPort, JobQueuePort, StoragePort } from '@pof/core/ports'
 import type { Database, TenantContext } from '@pof/db'
 
 /**
@@ -27,6 +27,12 @@ export interface ApiContext {
    * message rather than throwing on a null somewhere further in.
    */
   storage?: StoragePort | undefined
+  /**
+   * Optional, and the upload path tolerates its absence: the asset stays
+   * `uploaded` and can be processed later. A queue outage should mean a
+   * late thumbnail, not a refused upload.
+   */
+  jobs?: JobQueuePort | undefined
 }
 
 export interface AuthenticatedSession {

@@ -13,7 +13,8 @@
     "@pof/config": "workspace:*",
     "@pof/core": "workspace:*",
     "@pof/db": "workspace:*",
-    "pg-boss": "^12.1.0"
+    "pg-boss": "^12.1.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@pof/tsconfig": "workspace:*",

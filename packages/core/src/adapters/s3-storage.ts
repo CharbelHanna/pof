@@ -36,6 +36,22 @@ export interface S3StorageOptions {
   /** Omitted for AWS; set for R2, SeaweedFS and anything self-hosted. */
   endpoint?: string
   /**
+   * The host a BROWSER should send to, when that differs from the one this
+   * server uses.
+   *
+   * They differ whenever storage is reachable under two names — which is
+   * exactly the case in docker-compose, where the server talks to
+   * `http://storage:8333` on the compose network and the browser can only
+   * reach `http://localhost:8333` on the host. A presigned URL signs its
+   * host, so one signed for the internal name is not merely inconvenient
+   * for the browser, it is unusable: the name does not resolve, and even if
+   * it did the signature would be for the wrong host.
+   *
+   * Unset in production, where a bucket has one public endpoint and both
+   * sides use it.
+   */
+  publicEndpoint?: string
+  /**
    * MinIO, SeaweedFS and most self-hosted servers address buckets by path
    * (`host/bucket/key`) rather than by subdomain. AWS and R2 do not.
    */
@@ -67,6 +83,25 @@ export function createS3Storage(options: S3StorageOptions): StoragePort {
     ...(options.endpoint ? { endpoint: options.endpoint } : {}),
     ...(options.forcePathStyle ? { forcePathStyle: true } : {}),
   })
+
+  /**
+   * A second client used ONLY for signing, pointed at the browser-facing
+   * host. Signing is pure computation — it opens no connection — so this
+   * costs nothing when the two endpoints are the same.
+   */
+  const signingClient =
+    options.publicEndpoint && options.publicEndpoint !== options.endpoint
+      ? new S3Client({
+          region: options.region,
+          credentials: {
+            accessKeyId: options.accessKeyId,
+            secretAccessKey: options.secretAccessKey,
+          },
+          requestChecksumCalculation: 'WHEN_REQUIRED',
+          endpoint: options.publicEndpoint,
+          ...(options.forcePathStyle ? { forcePathStyle: true } : {}),
+        })
+      : client
 
   return {
     async createUploadTarget(
@@ -101,7 +136,7 @@ export function createS3Storage(options: S3StorageOptions): StoragePort {
        * Signing it means the browser must send exactly this type or the
        * signature fails.
        */
-      const url = await getSignedUrl(client, command, {
+      const url = await getSignedUrl(signingClient, command, {
         expiresIn: ttl,
         signableHeaders: new Set(['content-type']),
       })
@@ -115,9 +150,13 @@ export function createS3Storage(options: S3StorageOptions): StoragePort {
     },
 
     async createReadUrl(key: string, ttlSeconds: number): Promise<string> {
-      return getSignedUrl(client, new GetObjectCommand({ Bucket: options.bucket, Key: key }), {
-        expiresIn: ttlSeconds,
-      })
+      return getSignedUrl(
+        signingClient,
+        new GetObjectCommand({ Bucket: options.bucket, Key: key }),
+        {
+          expiresIn: ttlSeconds,
+        },
+      )
     },
 
     async get(key: string): Promise<ReadableStream<Uint8Array>> {

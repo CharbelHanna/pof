@@ -1,3 +1,6 @@
 export type { StoragePort, UploadTarget, ObjectMetadata, CreateUploadOptions } from './storage.ts'
 export type { GeocodingPort, GeocodeResult, GeocodeQuery } from './geocoding.ts'
 export type { MailPort, MailMessage } from './mail.ts'
+export type { ImagePort, ImageMetadata, RenderedVariant, VariantSpec } from './image.ts'
+export type { JobQueuePort, JobPayload, EnqueueOptions } from './jobs.ts'
+export { JOB_NAMES } from './jobs.ts'

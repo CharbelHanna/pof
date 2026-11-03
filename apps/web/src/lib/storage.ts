@@ -34,6 +34,11 @@ export function getStorage(): StoragePort {
        */
       ...(env.STORAGE_ENDPOINT ? { endpoint: env.STORAGE_ENDPOINT } : {}),
       /**
+       * Presigned URLs are signed for this host instead, because they are
+       * handed to a browser that cannot resolve the compose network.
+       */
+      ...(env.STORAGE_PUBLIC_ENDPOINT ? { publicEndpoint: env.STORAGE_PUBLIC_ENDPOINT } : {}),
+      /**
        * SeaweedFS and MinIO address buckets by path; AWS and R2 by
        * subdomain. Getting this wrong surfaces as a confusing DNS failure
        * rather than a storage error, which is why it is configuration
