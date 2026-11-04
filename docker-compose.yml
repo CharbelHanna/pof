@@ -6,6 +6,27 @@
 #
 # Application services (web, worker) are added to this file as they are built
 # in Phases 0 and 2.
+#
+# ---------------------------------------------------------------------------
+# Building with a version
+# ---------------------------------------------------------------------------
+# All three images that run application code (migrate, web, worker) take an
+# APP_VERSION build argument, and all three must receive the SAME value — the
+# app reports web and worker versions side by side precisely so a half-finished
+# deploy is visible, which only works if a whole deploy agrees.
+#
+# .dockerignore excludes .git, so the build cannot read the repository itself.
+# Derive the value outside and pass it in:
+#
+#   APP_VERSION=$(git describe --tags --always --dirty) docker compose build
+#
+# Not a hand-typed string: the point of a version is that it comes from
+# somewhere. `git describe` reads the nearest tag, so `git tag v0.5.0` is the
+# act of cutting a release and everything downstream follows from it. Before
+# the first tag it falls back to a bare commit, which is honest.
+#
+# Omitting it entirely leaves every image saying `dev`, which is a legible
+# "nobody told me" rather than a wrong answer.
 
 name: pof
 
@@ -129,9 +150,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # .dockerignore excludes .git, so the build cannot read the SHA
-        # itself. Set APP_VERSION in .env, or export it before building:
-        #   APP_VERSION=$(git describe --tags --always --dirty) docker compose build
+        # See the header of this file for how to supply this.
         APP_VERSION: ${APP_VERSION:-dev}
     depends_on:
       migrate:
