@@ -1,0 +1,22 @@
+-- ===========================================================================
+-- Grants for the worker heartbeat.
+-- ===========================================================================
+--
+-- NOT enable_tenant_rls. This table has no `workspace_id` and nothing to
+-- isolate — it records which build is processing jobs and when it was last
+-- alive, which is infrastructure rather than anyone's data. The same
+-- reasoning keeps `shoot_type` out of the tenant policy.
+--
+-- Applying the tenant helper here would be actively wrong: its policy
+-- compares `workspace_id` to the current setting, and on a table with no
+-- such column the migration would simply fail. On a table that happened to
+-- have one, it would hide the row from the very process that needs to read
+-- it, since the web app reads this outside any tenant context.
+--
+-- The grants are therefore explicit and deliberately narrow: the
+-- application role writes its own heartbeat and reads it back, and nothing
+-- else touches it.
+GRANT SELECT, INSERT, UPDATE ON "worker_heartbeat" TO app_user;
+
+-- No DELETE. There is exactly one row and it is upserted forever; the only
+-- reason to delete it would be a mistake.

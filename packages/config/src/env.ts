@@ -50,6 +50,16 @@ const serverSchema = z
     /** Separate, higher-privilege URL used only by `pnpm db:migrate`. */
     DATABASE_MIGRATION_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
 
+    /**
+     * The build this process is running, injected at image build time.
+     *
+     * Defaults to `dev` rather than being required, so running from source
+     * needs no ceremony. A deployed image that still says `dev` means the
+     * build argument was not passed — which is worth being able to see
+     * rather than guess at.
+     */
+    APP_VERSION: z.string().default('dev'),
+
     /** Public origin of the app, used for auth callbacks and absolute links. */
     APP_URL: z.url(),
 

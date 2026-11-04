@@ -62,7 +62,17 @@ RUN pnpm --filter @pof/web build
 FROM node:${NODE_VERSION} AS runtime
 WORKDIR /app
 
+# The build this image is. Passed in rather than read from git, because
+# .dockerignore excludes .git from the context — deliberately, to keep the
+# context small — so the build genuinely cannot work it out for itself.
+#
+# Defaults to `dev` so a plain `docker build` still works. A deployed image
+# reporting `dev` means the argument was not passed, which is worth being
+# able to see rather than guess at.
+ARG APP_VERSION=dev
+
 ENV NODE_ENV=production \
+    APP_VERSION=${APP_VERSION} \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0

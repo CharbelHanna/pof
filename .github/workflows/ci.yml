@@ -225,6 +225,11 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: false
+          # .dockerignore excludes .git, so the image cannot derive this.
+          # Passing it here is also what proves the argument is plumbed
+          # through — a build that still said `dev` would mean it is not.
+          build-args: |
+            APP_VERSION=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -234,5 +239,7 @@ jobs:
           context: .
           file: apps/worker/Dockerfile
           push: false
+          build-args: |
+            APP_VERSION=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

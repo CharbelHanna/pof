@@ -28,3 +28,9 @@ export { processAsset, VARIANT_SPECS } from './modules/assets/process.service.ts
 export * as moodboards from './modules/assets/moodboard.service.ts'
 export { getUsage, recomputeUsage, assetFootprint } from './modules/assets/usage.service.ts'
 export * as shotReferences from './modules/preparation/shot-reference.service.ts'
+export {
+  readVersion,
+  writeHeartbeat,
+  announceStart,
+  type VersionReport,
+} from './modules/identity/version.service.ts'
