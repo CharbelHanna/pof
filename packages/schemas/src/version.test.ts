@@ -23,6 +23,16 @@ describe('releaseName', () => {
     expect(releaseName('v0.4.0-3-g3c2c4af-dirty')).toBe('v0.4.0')
   })
 
+  /**
+   * The case that nearly slipped through. On an exact tag with uncommitted
+   * changes `git describe` emits `v0.4.0-dirty`, and `-dirty` is shaped
+   * exactly like a prerelease label — so parsing the tag before stripping
+   * the marker yields `v0.4.0-dirty` on screen.
+   */
+  it('drops the dirty marker when sitting exactly on a tag', () => {
+    expect(releaseName('v0.4.0-dirty')).toBe('v0.4.0')
+  })
+
   it('keeps a prerelease label, which is part of the release', () => {
     // v1.0.0-beta.2 is a release someone chose to cut; -3-gabc1234 is not.
     expect(releaseName('v1.0.0-beta.2')).toBe('v1.0.0-beta.2')
@@ -64,6 +74,13 @@ describe('isTaggedRelease', () => {
   it('is false once past the tag', () => {
     expect(isTaggedRelease('v0.4.0-3-g3c2c4af')).toBe(false)
     expect(isTaggedRelease('v0.4.0-3-g3c2c4af-dirty')).toBe(false)
+  })
+
+  it('is false on a tag with a dirty tree', () => {
+    // The tag names a commit; this build contains something that commit
+    // does not. Calling it the release would be a small lie with an
+    // expensive failure mode — "but 0.4.0 works on my machine".
+    expect(isTaggedRelease('v0.4.0-dirty')).toBe(false)
   })
 
   it('is false with no tag at all', () => {
