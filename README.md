@@ -48,6 +48,23 @@ migrations automatically on the way up. Open <http://localhost:3000>.
 Nothing else to run. This is also the portability test: if it runs here, it runs
 on any container host.
 
+The app shows which build it is running, bottom-right of the header. That value
+comes from a build argument, because `.dockerignore` excludes `.git` and the
+image cannot read the repository itself — so to build images that know what they
+are:
+
+```bash
+APP_VERSION=$(git describe --tags --always --dirty) docker compose build
+```
+
+Without it every image says `dev`, which is a legible "nobody told me" rather
+than a wrong answer. `git describe` reads the nearest tag, so **`git tag v0.5.0`
+is the act of cutting a release** and the displayed version follows from it;
+before the first tag it falls back to a short commit hash. The full build id —
+including how many commits past the tag, and whether the tree was dirty — is in
+the `title` of that element and in `GET /api/version`, which also reports the
+worker's build so a half-finished deploy is visible.
+
 #### B. App on the host, infrastructure in containers (for development)
 
 Gives you hot reload and faster iteration.

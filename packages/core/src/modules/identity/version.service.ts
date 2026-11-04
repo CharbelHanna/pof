@@ -1,5 +1,6 @@
 import { desc, eq, sql } from 'drizzle-orm'
 import { schema, type Database } from '@pof/db'
+import { releaseName } from '@pof/schemas'
 
 /**
  * Which build is running, on both sides.
@@ -25,6 +26,13 @@ const ROW_ID = 'worker'
 const STALE_AFTER_MS = 2 * 60 * 1000
 
 export interface VersionReport {
+  /**
+   * The release the web app is on, as shown in the interface.
+   *
+   * Reported alongside the full build id so a consumer does not have to
+   * parse `git describe` output to find out what to call this version.
+   */
+  release: string
   web: string
   worker: string | null
   workerLastSeenAt: Date | null
@@ -56,6 +64,7 @@ export async function readVersion(db: Database, webVersion: string): Promise<Ver
   const workerAlive = row ? Date.now() - row.lastSeenAt.getTime() < STALE_AFTER_MS : false
 
   return {
+    release: releaseName(webVersion),
     web: webVersion,
     worker: row?.version ?? null,
     workerLastSeenAt: row?.lastSeenAt ?? null,

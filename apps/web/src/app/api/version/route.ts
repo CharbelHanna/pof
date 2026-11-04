@@ -1,5 +1,6 @@
 import { serverEnv } from '@pof/config/env'
 import { readVersion } from '@pof/core'
+import { releaseName } from '@pof/schemas'
 
 import { getDb } from '~/lib/db.ts'
 
@@ -40,7 +41,13 @@ export async function GET(): Promise<Response> {
      * than a blank 500 when someone is trying to work out what is wrong.
      */
     return Response.json(
-      { web: env.APP_VERSION, worker: null, workerAlive: false, inSync: false },
+      {
+        release: releaseName(env.APP_VERSION),
+        web: env.APP_VERSION,
+        worker: null,
+        workerAlive: false,
+        inSync: false,
+      },
       { status: 503, headers: { 'cache-control': 'no-store' } },
     )
   }

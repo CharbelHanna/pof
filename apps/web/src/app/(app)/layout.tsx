@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 import { serverEnv } from '@pof/config/env'
+import { releaseName } from '@pof/schemas'
 
 import { AppNav } from '~/components/app-nav.tsx'
 import { SignOutButton } from '~/components/sign-out-button.tsx'
@@ -40,12 +41,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
 
       {/*
-        The build, small and out of the way. Present on every page because
+        The release, small and out of the way. Present on every page because
         the moment it is wanted is the moment something is wrong, and
         hunting for a settings screen is the wrong thing to be doing then.
+
+        The RELEASE, not the build id: `git describe` output carries a
+        commit count, a hash and sometimes `-dirty`, which is exactly what
+        /api/version is for and exactly what a client reading a screen
+        should not be shown. `-dirty` in particular reads as "broken".
       */}
-      <p className="text-ink-500 mx-auto max-w-3xl px-5 pt-3 text-right text-xs">
-        {serverEnv().APP_VERSION}
+      <p
+        className="text-ink-500 mx-auto max-w-3xl px-5 pt-3 text-right text-xs"
+        // The full build id, for anyone who hovers or inspects — so the
+        // detail is one gesture away rather than gone.
+        title={serverEnv().APP_VERSION}
+      >
+        {releaseName(serverEnv().APP_VERSION)}
       </p>
 
       {/* Bottom padding clears the fixed mobile nav bar. */}

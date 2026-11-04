@@ -98,6 +98,19 @@ describe('readVersion', () => {
     expect(report.inSync).toBe(false)
   })
 
+  /**
+   * The build id is `git describe` output, so it usually carries a commit
+   * count and hash. Naming the release here means a consumer of this
+   * endpoint — a deploy script, a status page — gets the answer rather than
+   * re-implementing the parsing.
+   */
+  it('names the release alongside the full build id', async () => {
+    const report = await readVersion(db, 'v0.5.0-3-gabc1234')
+
+    expect(report.release).toBe('v0.5.0')
+    expect(report.web).toBe('v0.5.0-3-gabc1234')
+  })
+
   it('treats a stale heartbeat as a dead worker', async () => {
     await announceStart(db, 'v1.0.0')
     await ageHeartbeat(5)
