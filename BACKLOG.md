@@ -280,3 +280,157 @@ solving together.
 
 **Rough size.** Small for per-stop times; medium if stops gain their own
 times.
+
+---
+
+## Add an existing shoot to a campaign, from the campaign page
+
+A campaign page lists the shoots inside it but offers no way to put one
+there. The only route is to open the shoot and change its campaign.
+
+**Why it matters.** This is the mirror of `Create a campaign from the shoot
+page` above, and the two are wanted at different moments. That one serves
+"these two shoots belong together, let me make a campaign". This one serves
+the opposite flow: you are looking at a campaign, you can see what is in it,
+and you know something is missing. Having to leave, find the shoot and edit
+it from the other side is the same interruption in reverse.
+
+**What it needs.** A picker on the campaign page, and little else —
+`shoots.update` already accepts `campaignId`, and `campaign-detail.tsx`
+already renders `<ShootList campaignId={...} />`, so the list refreshes for
+free. `shoots.list` takes a `campaignId` filter that can source the
+candidates.
+
+**Worth deciding when picked up.** Whether a shoot that already belongs to
+another campaign can be picked — which makes this "move", not "add", and
+should probably say so. Offering only unassigned shoots is simpler and
+likely right; a shoot in two campaigns is not expressible anyway, since
+`campaign_id` is a single nullable column.
+
+**Rough size.** Small.
+
+---
+
+## Change a session's date and time
+
+A session's `starts_at` and `ends_at` are fixed at creation. Nothing in the
+interface can move them afterwards.
+
+**Why it matters.** Shoots move. Weather turns, a model reschedules, a
+permit comes through for a different day — rescheduling is ordinary, not
+exceptional. Today the only recourse is to delete the session and make a new
+one, which throws away everything hanging off it: stops, locations, status,
+and eventually the shot lists and checklists that Phases 3 and 4 will
+attach. Destroying real work to change a date is the kind of thing that
+teaches people not to trust the tool.
+
+**What it needs.** Only an edit affordance. `sessions.update` already
+accepts `startsAt`, `endsAt` and `timezone`, and `updateSessionSchema`
+already enforces that the end follows the start — `session-list.tsx` wires
+that mutation up but sends nothing except `status`. So this is a form, not a
+feature.
+
+**Worth deciding when picked up.** What happens to the timezone. Moving a
+session within one place should leave it alone, but moving a shoot to
+another country should not silently keep the old zone — and a session moved
+across a DST boundary shifts by an hour against the wall clock while
+remaining correct as an instant, which will look like a bug to whoever moved
+it. Sun times are derived from the instant and follow automatically; a
+weather snapshot taken for the old date does not, and should be invalidated.
+
+**Rough size.** Small.
+
+---
+
+## Suggest a time for a landscape session
+
+When a shoot is landscape type, offer the light windows as choices rather
+than only describing them after the fact.
+
+**Why it matters.** The registry already describes this genre as "outdoor
+and location work where light and access decide the day", and for a
+landscape shoot the light genuinely is the plan — the question is not "what
+is the light at 2pm" but "when should I be there". Today `sunReport()`
+computes sunrise, sunset and the golden and blue hour windows, and
+`SunTimes` renders them for a session that has already been scheduled. All
+the maths exists; it is pointed the wrong way round.
+
+**What it needs.** Inverting the existing calculation: given a date and a
+location, present the windows as pickable times that fill in `starts_at` and
+`ends_at`, instead of making someone read the window and type the time back
+in by hand. A golden-hour window is already a start and an end, so it maps
+onto a session directly.
+
+**Worth deciding when picked up.**
+
+- Whether this is landscape-only or offered for any genre with an outdoor
+  location. Portrait work chases the same light, so gating on
+  `shoot_type_key` may be narrower than the actual need.
+- Whether `hikeMinutes` participates. The genre already records it, and
+  "golden hour starts at 06:12, so leave at 05:20" is more useful than the
+  window alone — and it is arithmetic, not an integration.
+- Whether `tideState` does too. The registry records a preference but
+  nothing computes tides, and unlike sun times they cannot be derived
+  locally — that is a provider, a key and a rate limit, so it belongs behind
+  a port the way weather does.
+- Which location, given a session can have several stops. That is the same
+  question the `Sun times only reflect a session's first location` entry
+  raises, and worth settling once for both.
+
+**Rough size.** Small for suggesting sun windows, which is an affordance
+over maths that already exists. Medium if departure time is included.
+Separate and larger if tides are.
+
+---
+
+## Pull references in from Pinterest and elsewhere
+
+Let a reference image arrive from a URL or a linked account, not only from
+the file picker.
+
+**Why it matters.** `assets.createUpload` is the only way an image enters
+the system: the browser gets a presigned target, PUTs the file, confirms.
+That assumes every reference is already a file on the device you are sitting
+at, and it usually is not — references are found while browsing, and
+Pinterest in particular is where a lot of photographers keep them. The
+workaround is to save each image to disk and upload it, which is enough
+friction that moodboards end up thinner than the planning that actually
+happened.
+
+**What it needs.**
+
+- **A URL import path.** Fetch server-side and store the result as an
+  ordinary asset, so the derivative pipeline, usage counters and moodboard
+  code need no changes at all. It belongs in the worker: it is an outbound
+  fetch of an unknown-sized response from an untrusted host, which is
+  precisely what should not happen inside a request.
+- **The usual protections on that fetch** — a size ceiling enforced while
+  streaming rather than after the fact, a content-type check, a timeout and
+  a redirect policy. A URL supplied by a user and then fetched by the server
+  is the classic SSRF shape, so private address ranges have to be refused.
+- **`workspace_usage` accounted the same way**, since an imported image
+  costs exactly what an uploaded one does.
+
+**Worth deciding when picked up.**
+
+- **Whether a connector is needed at all.** A generic "paste an image URL",
+  plus drag-and-drop of an image from another tab, may cover most of the
+  value for none of the cost. Worth building that first and seeing what is
+  still missing: a per-service OAuth integration is a lot of surface to
+  maintain, and each one rots independently of the others.
+- **What Pinterest actually permits.** Their API terms, whether board access
+  requires OAuth, and whether private boards are reachable at all are the
+  first things to check — the answer may make a connector not worth
+  building. Scraping a public pin URL is a different thing wearing the same
+  clothes and would need deciding on its own merits.
+- **Copy or link.** Storing a copy survives link rot and makes the asset
+  behave like every other one, but it means holding someone else's image.
+  Linking avoids that and breaks silently. Copying is probably right for
+  private planning; the distinction matters more if a moodboard is ever
+  shared with a client.
+- **Attribution.** A reference from the web has a source worth recording on
+  the asset — both out of fairness and because "where did this come from" is
+  a question that gets asked as soon as a client likes one.
+
+**Rough size.** Medium for URL import, which is where most of the value is.
+Large for any single OAuth connector, and recurring rather than one-off.
