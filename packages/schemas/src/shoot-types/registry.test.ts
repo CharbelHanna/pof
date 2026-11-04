@@ -142,3 +142,48 @@ function sampleFor(field: FieldSpec): unknown {
       return 'sample'
   }
 }
+
+describe('declared numeric bounds match the schema', () => {
+  /**
+   * A field's `min`/`max` are mirrored onto the HTML input, so if they
+   * disagree with the Zod schema the browser either blocks a value the
+   * server would accept, or waves through one it rejects — which is the bug
+   * that started this: "Approach time (minutes)" accepted a negative, sent
+   * it, and came back as a bare "Validation failed".
+   *
+   * Probed rather than introspected. Reading limits out of a Zod schema
+   * means reaching into its internals, which breaks on a version bump and
+   * tests the library rather than the agreement. Feeding it values and
+   * watching what it does tests the thing that actually matters.
+   */
+  const numericFields = Object.values(SYSTEM_SHOOT_TYPES).flatMap((definition) =>
+    definition.fields
+      .filter((field) => field.widget === 'number')
+      .map((field) => ({ definition, field })),
+  )
+
+  it('covers every number field', () => {
+    // If a genre gains a numeric field with no bounds, the input would be
+    // unconstrained again and this suite would quietly stop protecting it.
+    expect(numericFields.length).toBeGreaterThan(0)
+    for (const { definition, field } of numericFields) {
+      expect(field.min, `${definition.key}.${field.name} has no min`).toBeTypeOf('number')
+      expect(field.max, `${definition.key}.${field.name} has no max`).toBeTypeOf('number')
+    }
+  })
+
+  it.each(numericFields.map(({ definition, field }) => [definition.key, field] as const))(
+    '%s.%s accepts its bounds and rejects just outside them',
+    (key, field) => {
+      const definition = Object.values(SYSTEM_SHOOT_TYPES).find((entry) => entry.key === key)!
+      const parse = (value: number) =>
+        definition.detailsSchema.safeParse({ [field.name]: value }).success
+
+      expect(parse(field.min!), `${key}.${field.name} rejected its own min`).toBe(true)
+      expect(parse(field.max!), `${key}.${field.name} rejected its own max`).toBe(true)
+
+      expect(parse(field.min! - 1), `${key}.${field.name} accepted min - 1`).toBe(false)
+      expect(parse(field.max! + 1), `${key}.${field.name} accepted max + 1`).toBe(false)
+    },
+  )
+})

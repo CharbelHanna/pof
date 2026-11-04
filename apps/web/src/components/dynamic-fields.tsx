@@ -21,11 +21,20 @@ export function DynamicFields({
   values,
   onChange,
   disabled,
+  errors,
 }: {
   fields: readonly FieldSpec[]
   values: Record<string, unknown>
   onChange: (name: string, value: unknown) => void
   disabled?: boolean
+  /**
+   * Server-reported problems, keyed by field name.
+   *
+   * Shown against the input rather than as one banner: "Validation failed"
+   * at the top of a six-field form tells someone that something is wrong
+   * and nothing about where.
+   */
+  errors?: Record<string, string>
 }) {
   if (fields.length === 0) return null
 
@@ -49,14 +58,17 @@ function Field({
   value,
   onChange,
   disabled,
+  error,
 }: {
   field: FieldSpec
   value: unknown
   onChange: (value: unknown) => void
   disabled?: boolean
+  error?: string | undefined
 }) {
   const id = useId()
   const helpId = `${id}-help`
+  const errorId = `${id}-error`
 
   /**
    * Help text is associated with `aria-describedby` and kept OUTSIDE the
@@ -79,12 +91,25 @@ function Field({
 
       <FieldInput
         id={id}
-        describedBy={field.help ? helpId : undefined}
+        /**
+         * Both the error and the help are descriptions, so both belong in
+         * `aria-describedby` — the error first, because it is the reason
+         * the field has focus. Neither goes inside the label, which would
+         * fold them into the field's accessible NAME.
+         */
+        describedBy={[error ? errorId : null, field.help ? helpId : null].filter(Boolean).join(' ')}
+        invalid={Boolean(error)}
         field={field}
         value={value}
         onChange={onChange}
         disabled={disabled}
       />
+
+      {error && (
+        <p id={errorId} className="mt-1 text-xs text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
 
       {field.help && (
         <p id={helpId} className="text-ink-500 mt-1 text-xs">
@@ -98,6 +123,7 @@ function Field({
 function FieldInput({
   id,
   describedBy,
+  invalid,
   field,
   value,
   onChange,
@@ -105,6 +131,7 @@ function FieldInput({
 }: {
   id: string
   describedBy: string | undefined
+  invalid?: boolean
   field: FieldSpec
   value: unknown
   onChange: (value: unknown) => void
@@ -113,7 +140,16 @@ function FieldInput({
   const base =
     'border-ink-200 dark:border-ink-700 dark:bg-ink-900 w-full rounded-lg border bg-white px-3 py-2.5 text-base outline-none focus:border-accent-500 disabled:opacity-60'
 
-  const shared = { id, 'aria-describedby': describedBy, disabled, className: base }
+  const shared = {
+    id,
+    // An empty string would be an attribute pointing at nothing.
+    'aria-describedby': describedBy || undefined,
+    // Announces the field as invalid rather than relying on red text,
+    // which a screen reader cannot see and a colour-blind user may not.
+    'aria-invalid': invalid || undefined,
+    disabled,
+    className: invalid ? `${base} border-red-500 dark:border-red-500` : base,
+  }
 
   switch (field.widget) {
     case 'textarea':
@@ -133,6 +169,14 @@ function FieldInput({
           {...shared}
           type="number"
           inputMode="numeric"
+          /**
+           * Mirrored from the genre's schema so the browser refuses an
+           * out-of-range value before a round trip. Without them "Approach
+           * time (minutes)" happily accepted a negative, sent it, and the
+           * server's rejection arrived as a bare "Validation failed".
+           */
+          {...(field.min !== undefined ? { min: field.min } : {})}
+          {...(field.max !== undefined ? { max: field.max } : {})}
           placeholder={field.placeholder}
           value={asText(value)}
           onChange={(event) => {
