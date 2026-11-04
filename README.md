@@ -65,6 +65,24 @@ including how many commits past the tag, and whether the tree was dirty — is i
 the `title` of that element and in `GET /api/version`, which also reports the
 worker's build so a half-finished deploy is visible.
 
+### Published images
+
+CI publishes both images to GHCR once every check has passed:
+
+```
+ghcr.io/charbelhanna/pof-web
+ghcr.io/charbelhanna/pof-worker
+```
+
+Pushing a tag — `git tag -a v0.5.0 -m "..." && git push origin v0.5.0` — builds
+and publishes `0.5.0`, `0.5` and `latest`. A merge to `main` publishes `main` and
+`sha-<commit>`, which is a deployable preview of the default branch rather than a
+release. Pull requests build the images as a check but publish nothing.
+
+Deploy by digest or by an exact version in anything that matters; `0.5` and
+`latest` move under you by design, which is useful for a staging environment and
+not what you want in production.
+
 #### B. App on the host, infrastructure in containers (for development)
 
 Gives you hot reload and faster iteration.
