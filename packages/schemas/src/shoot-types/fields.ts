@@ -27,6 +27,18 @@ export interface FieldSpec {
   placeholder?: string
   /** Required for `select`; ignored otherwise. */
   options?: readonly FieldOption[]
+  /**
+   * Bounds for `number`, mirrored onto the input so the browser enforces
+   * them before a round trip.
+   *
+   * These MUST match the genre's Zod schema. Without them a field like
+   * "Approach time (minutes)" accepted a negative in the browser, sent it,
+   * and came back with a bare "Validation failed" — the schema was right,
+   * but nothing told the user which field or why. `registry.test.ts` probes
+   * the schema with `min - 1` and `max + 1` so the two cannot drift.
+   */
+  min?: number
+  max?: number
 }
 
 export interface ShootTypeDefinition {

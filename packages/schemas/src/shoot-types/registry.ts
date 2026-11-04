@@ -62,6 +62,8 @@ const portrait = {
       name: 'subjectCount',
       label: 'Number of subjects',
       widget: 'number',
+      min: 0,
+      max: 10000,
       help: 'Drives how much time and how many looks you need.',
     },
     { name: 'wardrobeNotes', label: 'Wardrobe notes', widget: 'textarea' },
@@ -90,7 +92,7 @@ const editorial = {
       help: 'The publication date, not your delivery date.',
     },
     { name: 'artDirector', label: 'Art director', widget: 'text' },
-    { name: 'lookCount', label: 'Number of looks', widget: 'number' },
+    { name: 'lookCount', label: 'Number of looks', widget: 'number', min: 0, max: 10000 },
   ],
 } satisfies ShootTypeDefinition
 
@@ -110,6 +112,8 @@ const landscape = {
       name: 'hikeMinutes',
       label: 'Approach time (minutes)',
       widget: 'number',
+      min: 0,
+      max: 2880,
       help: 'Counted backwards from first light when planning the call time.',
     },
     {
@@ -145,6 +149,8 @@ const product = {
       name: 'skuCount',
       label: 'Number of SKUs',
       widget: 'number',
+      min: 0,
+      max: 10000,
       help: 'The single biggest driver of how long a catalogue day takes.',
     },
     {

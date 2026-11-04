@@ -12,6 +12,7 @@ import { Moodboard } from '~/components/moodboard.tsx'
 import { LocationPicker } from '~/components/location-picker.tsx'
 import { SessionList } from '~/components/session-list.tsx'
 import { orpc } from '~/lib/api.ts'
+import { fieldErrors, unattributedError } from '~/lib/field-errors.ts'
 
 /**
  * One shoot: its cross-genre fields, its genre-specific fields, and its
@@ -157,6 +158,7 @@ export function ShootDetail({ shootId }: { shootId: string }) {
           </h2>
 
           <DynamicFields
+            errors={fieldErrors(update.error)}
             fields={activeType.fields}
             values={details}
             onChange={(name, value) =>
@@ -186,11 +188,24 @@ export function ShootDetail({ shootId }: { shootId: string }) {
         </section>
       )}
 
-      {update.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {update.error.message}
-        </p>
-      )}
+      {/*
+        Only what could NOT be pinned to a field.
+        The API reports which field was wrong and why; those messages are
+        rendered against the inputs themselves. Repeating "Validation
+        failed" here as well would add noise rather than information —
+        which is exactly what this banner used to be on its own.
+      */}
+      {update.error &&
+        (() => {
+          const shown = new Set(activeType?.fields.map((field) => field.name) ?? [])
+          const summary = unattributedError(update.error, shown)
+
+          return summary ? (
+            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+              {summary}
+            </p>
+          ) : null
+        })()}
 
       <SessionList shootId={shoot.id} locationId={shoot.primaryLocationId} />
 
