@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    # Release tags. Without this a tag push runs nothing at all — which is
+    # how `v0.4.0` came and went without producing a single build.
+    tags: ['v*']
   pull_request:
 
 concurrency:
@@ -18,7 +21,11 @@ concurrency:
   # 'refs/heads/main' }}` and did NOT work — main runs were still cancelled
   # while queued (the tell is a cancelled run with zero jobs). Keeping the
   # distinction in the group avoids relying on that expression entirely.
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'shared' }}
+  #
+  # Tags are grouped like main, for the same reason: a release build that got
+  # silently cancelled is precisely the failure this comment exists about, and
+  # a release is the worst possible place to lose a recorded result.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && github.sha || 'shared' }}
   cancel-in-progress: true
 
 env:
@@ -213,6 +220,26 @@ jobs:
     name: Container images
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    # Nothing is published until everything else has passed.
+    #
+    # This costs the fast parallel signal the image build used to give — it
+    # now waits on the e2e suite, the slowest job here. That is the right
+    # trade: an image in the registry is something someone can deploy, and
+    # publishing one built from a commit whose tests failed turns a red run
+    # into a running deployment. On a pull request nothing is pushed anyway,
+    # so the only thing lost there is a few minutes of feedback latency.
+    needs: [quality, portable, test, e2e]
+
+    # The default token is read-only. `packages: write` is what lets it push
+    # to GHCR; no secret to create, rotate or leak. If a push still comes
+    # back 403, the repository or organisation is capping the token below
+    # what this asks for — Settings → Actions → General → Workflow
+    # permissions.
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - uses: actions/checkout@v5
         with:
@@ -244,14 +271,72 @@ jobs:
           echo "value=$version" >> "$GITHUB_OUTPUT"
           echo "Building as $version"
 
+      # GHCR rather than Docker Hub: no account to create, no secret to
+      # manage, no anonymous pull rate limit for whoever deploys this, and it
+      # authenticates with the token the run already has. It is also the
+      # portable choice despite being GitHub's — an image is an image, and
+      # moving to ACR or Docker Hub later is a change to these two lines.
+      #
+      # Skipped on pull requests: a fork's token is read-only, so logging in
+      # would fail the job for a contributor who has done nothing wrong.
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Turns a git ref into image tags, so "deploy 0.4.0" finally refers to
+      # something that exists:
+      #
+      #   tag v0.4.0   ->  0.4.0, 0.4, latest
+      #   push to main ->  main, sha-3003226
+      #
+      # The moving tags matter as much as the exact one. `0.4` lets a deploy
+      # follow patch releases without being edited, and `main` gives a
+      # deployable preview of the default branch. `latest` is attached only
+      # by a semver tag, never by a main commit, so it cannot drift ahead of
+      # the newest release.
+      #
+      # Lowercase is not a style choice: registry paths must be lowercase and
+      # the GitHub account name is not.
+      - name: Image tags for web
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/charbelhanna/pof-web
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha
+
+      - name: Image tags for worker
+        id: meta-worker
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/charbelhanna/pof-worker
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha
+
       # Proves the portability claim on every commit: if these build, the
       # stack runs on any container host. No vendor build packs involved.
+      #
+      # On a pull request this still builds and still fails the run if the
+      # build breaks — it simply does not publish. The check keeps its value
+      # without every PR writing to the registry.
       - name: Build web image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/web/Dockerfile
-          push: false
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
           # .dockerignore excludes .git, so the image cannot derive this.
           # Passing it here is also what proves the argument is plumbed
           # through — a build that still said `dev` would mean it is not.
@@ -265,8 +350,24 @@ jobs:
         with:
           context: .
           file: apps/worker/Dockerfile
-          push: false
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-worker.outputs.tags }}
+          labels: ${{ steps.meta-worker.outputs.labels }}
           build-args: |
             APP_VERSION=${{ steps.version.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # The run log should say what a deploy can pull, rather than making
+      # someone open the Packages tab to find out what just happened.
+      - name: Summary
+        if: github.event_name != 'pull_request'
+        run: |
+          {
+            echo "### Published \`${{ steps.version.outputs.value }}\`"
+            echo
+            echo '```'
+            echo "${{ steps.meta-web.outputs.tags }}"
+            echo "${{ steps.meta-worker.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
