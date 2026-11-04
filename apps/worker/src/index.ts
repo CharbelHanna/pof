@@ -1,5 +1,5 @@
 import { serverEnv } from '@pof/config/env'
-import { createS3Storage } from '@pof/core'
+import { announceStart, createS3Storage, writeHeartbeat } from '@pof/core'
 import { createDatabase } from '@pof/db'
 // Named export: pg-boss dropped its default export in v12.
 import { PgBoss } from 'pg-boss'
@@ -86,13 +86,40 @@ async function main(): Promise<void> {
 
   await registerAssetProcess(boss, { db, storage, image: createSharpImage() })
 
-  console.log('[worker] started; asset.process registered')
+  /**
+   * Say which build this is, and keep saying it.
+   *
+   * The worker has no HTTP surface, so a row is how anything learns both
+   * that it is alive and what it is running. Until now a dead worker was
+   * invisible: uploads would simply never become `ready`, with nothing
+   * anywhere saying why.
+   */
+  await announceStart(db, env.APP_VERSION)
+  console.log(`[worker] started ${env.APP_VERSION}; asset.process registered`)
+
+  /**
+   * Comfortably more often than the staleness window, so an ordinary pause
+   * — a long render holding the loop — never reads as death.
+   *
+   * `unref` so a pending timer cannot keep the process alive during a
+   * graceful shutdown, which would turn a clean stop into a 30-second wait
+   * for the orchestrator to lose patience.
+   */
+  const heartbeat = setInterval(() => {
+    void writeHeartbeat(db, env.APP_VERSION).catch((error: unknown) => {
+      // Logged, never thrown: failing to report liveness must not stop the
+      // worker actually doing work.
+      console.error('[worker] heartbeat failed:', error)
+    })
+  }, 30_000)
+  heartbeat.unref()
 
   const shutdown = async (signal: string) => {
     console.log(`[worker] ${signal} received, draining…`)
     // Lets in-flight jobs finish rather than abandoning them mid-write, which
     // matters for the image pipeline where a half-written derivative would
     // leave an asset stuck in `processing`.
+    clearInterval(heartbeat)
     await boss.stop({ graceful: true })
     await client.end({ timeout: 5 })
     process.exit(0)

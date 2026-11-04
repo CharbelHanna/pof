@@ -28,6 +28,7 @@ export * from './domain/asset.ts'
 export * from './domain/moodboard.ts'
 export * from './domain/workspace-usage.ts'
 export * from './domain/shot-reference.ts'
+export * from './domain/worker-heartbeat.ts'
 
 import { campaign } from './domain/campaign.ts'
 import { shootSession } from './domain/session.ts'

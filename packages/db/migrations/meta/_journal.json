@@ -183,6 +183,20 @@
       "when": 1793742065110,
       "tag": "0025_shot_reference_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793784357694,
+      "tag": "0026_lively_praxagora",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793784372240,
+      "tag": "0027_worker_heartbeat_grants",
+      "breakpoints": true
     }
   ]
 }

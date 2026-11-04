@@ -2,6 +2,8 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
+import { serverEnv } from '@pof/config/env'
+
 import { AppNav } from '~/components/app-nav.tsx'
 import { SignOutButton } from '~/components/sign-out-button.tsx'
 import { SignedInAs } from '~/components/signed-in-as.tsx'
@@ -36,6 +38,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
+
+      {/*
+        The build, small and out of the way. Present on every page because
+        the moment it is wanted is the moment something is wrong, and
+        hunting for a settings screen is the wrong thing to be doing then.
+      */}
+      <p className="text-ink-500 mx-auto max-w-3xl px-5 pt-3 text-right text-xs">
+        {serverEnv().APP_VERSION}
+      </p>
 
       {/* Bottom padding clears the fixed mobile nav bar. */}
       <main className="mx-auto max-w-3xl px-5 py-8 pb-24 sm:pb-8">{children}</main>

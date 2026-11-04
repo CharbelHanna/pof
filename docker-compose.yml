@@ -109,6 +109,8 @@ services:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     depends_on:
       postgres:
         condition: service_healthy
@@ -126,6 +128,11 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # .dockerignore excludes .git, so the build cannot read the SHA
+        # itself. Set APP_VERSION in .env, or export it before building:
+        #   APP_VERSION=$(git describe --tags --always --dirty) docker compose build
+        APP_VERSION: ${APP_VERSION:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -183,6 +190,8 @@ services:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
     depends_on:
       migrate:
         condition: service_completed_successfully
