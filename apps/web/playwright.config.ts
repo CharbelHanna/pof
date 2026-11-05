@@ -59,6 +59,24 @@ export default defineConfig({
    */
   expect: { timeout: 15_000 },
 
+  /**
+   * The companion to the expect timeout above, and the one that was missing.
+   *
+   * Raising only the per-assertion budget is not enough: a test that signs up
+   * (one deliberate scrypt hash), creates a shoot, navigates and then asserts
+   * several times can exhaust Playwright's 30s default for the test as a
+   * whole while no single assertion ever came close to its own 15s limit.
+   *
+   * That surfaced as an intermittent failure in whichever spec happened to be
+   * running when the machine was busiest — always on `getByText(shootName)`
+   * in a sign-up helper, and never the same spec twice, which is the
+   * signature of a budget problem rather than a broken selector.
+   *
+   * Patience, not correctness: a genuinely stuck test still fails, and the
+   * webServer and expect timeouts still bound everything underneath.
+   */
+  timeout: 60_000,
+
   use: {
     baseURL: 'http://localhost:3100',
     trace: 'on-first-retry',
