@@ -13,6 +13,7 @@ import { shootRouter } from './routers/shoot.ts'
 import { shotGearRouter } from './routers/shot-gear.ts'
 import { shotReferenceRouter } from './routers/shot-reference.ts'
 import { shotRouter } from './routers/shot.ts'
+import { checklistItemRouter, checklistRouter } from './routers/checklist.ts'
 
 /**
  * The root router — the single surface every client reaches.
@@ -52,6 +53,8 @@ export const router = {
   locations: locationRouter,
   sessionLocations: sessionLocationRouter,
   shots: shotRouter,
+  checklists: checklistRouter,
+  checklistItems: checklistItemRouter,
   assets: assetRouter,
   moodboards: moodboardRouter,
   shotGear: shotGearRouter,

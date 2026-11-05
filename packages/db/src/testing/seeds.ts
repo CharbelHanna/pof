@@ -1,5 +1,6 @@
 import {
   asset,
+  checklist,
   gearItem,
   location,
   moodboard,
@@ -189,6 +190,32 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
       .returning({ id: asset.id })
 
     return { workspaceId, shotId: frame!.id, assetId: file!.id }
+  },
+
+  checklist: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe checklist parent' })
+      .returning({ id: shoot.id })
+
+    // `session_id` left null: a checklist hanging off the whole shoot is the
+    // simpler of the two valid shapes, and the isolation probe is about the
+    // workspace column rather than the session link.
+    return { workspaceId, shootId: parent!.id, name: 'isolation probe checklist' }
+  },
+
+  checklistItem: async (workspaceId, tx) => {
+    const [parent] = await tx
+      .insert(shoot)
+      .values({ workspaceId, name: 'isolation probe checklist item parent' })
+      .returning({ id: shoot.id })
+
+    const [list] = await tx
+      .insert(checklist)
+      .values({ workspaceId, shootId: parent!.id, name: 'isolation probe list' })
+      .returning({ id: checklist.id })
+
+    return { workspaceId, checklistId: list!.id, label: 'isolation probe item' }
   },
 
   shootSession: async (workspaceId, tx) => {
