@@ -1,6 +1,8 @@
 import {
   asset,
   checklist,
+  sessionTemplate,
+  sessionTemplateVersion,
   gearItem,
   location,
   moodboard,
@@ -216,6 +218,39 @@ export const tenantSeeds: Record<TenantTableName, TenantSeed> = {
       .returning({ id: checklist.id })
 
     return { workspaceId, checklistId: list!.id, label: 'isolation probe item' }
+  },
+
+  sessionTemplate: async (workspaceId) => ({
+    workspaceId,
+    name: 'isolation probe template',
+  }),
+
+  sessionTemplateVersion: async (workspaceId, tx) => {
+    const [template] = await tx
+      .insert(sessionTemplate)
+      .values({ workspaceId, name: 'isolation probe version parent' })
+      .returning({ id: sessionTemplate.id })
+
+    return { workspaceId, templateId: template!.id, version: 1 }
+  },
+
+  templateItem: async (workspaceId, tx) => {
+    const [template] = await tx
+      .insert(sessionTemplate)
+      .values({ workspaceId, name: 'isolation probe item parent' })
+      .returning({ id: sessionTemplate.id })
+
+    const [version] = await tx
+      .insert(sessionTemplateVersion)
+      .values({ workspaceId, templateId: template!.id, version: 1 })
+      .returning({ id: sessionTemplateVersion.id })
+
+    return {
+      workspaceId,
+      versionId: version!.id,
+      kind: 'shot' as const,
+      payload: { kind: 'shot', title: 'isolation probe shot' },
+    }
   },
 
   shootSession: async (workspaceId, tx) => {

@@ -2,6 +2,7 @@ import {
   check,
   foreignKey,
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -49,6 +50,20 @@ export const shootSession = pgTable(
      */
     status: sessionStatus('status').notNull().default('planned'),
     notes: text('notes'),
+
+    /**
+     * Which template was applied here, and at which version.
+     *
+     * Recorded rather than inferred, because this is what makes a diff
+     * possible later: comparing the version that was applied against the
+     * template's current version is how a future session can be offered
+     * "3 new items, 1 changed" while past sessions stay untouched.
+     *
+     * Not a foreign key, for the reason given on `shot.source_template_item_id`
+     * — provenance has to outlive the template it names.
+     */
+    appliedTemplateId: uuid('applied_template_id'),
+    appliedTemplateVersion: integer('applied_template_version'),
 
     /**
      * The instant the session starts, stored as timestamptz — an absolute

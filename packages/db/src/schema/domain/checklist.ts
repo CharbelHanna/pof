@@ -144,6 +144,17 @@ export const checklistItem = pgTable(
 
     notes: text('notes'),
 
+    /**
+     * Where this row came from, when it was copied from a template.
+     *
+     * Deliberately NOT a foreign key. Provenance is a historical record and
+     * has to outlive the template it names — deleting a template must not
+     * cascade into the shoots that were run from it, and must not be blocked
+     * by them either. A dangling id here means "copied from something since
+     * removed", which is the truth and is still more useful than null.
+     */
+    sourceTemplateItemId: uuid('source_template_item_id'),
+
     ...timestamps,
     ...softDelete,
   },
