@@ -74,7 +74,20 @@ export function ShootDetail({ shootId }: { shootId: string }) {
         <Link href="/shoots" className="text-ink-500 text-sm hover:underline">
           ← All shoots
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{shoot.name}</h1>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight">{shoot.name}</h1>
+          {/*
+            Deliberately prominent, and deliberately not buried in a menu.
+            This is tapped while walking to a location with a bag over one
+            shoulder, which is the worst possible moment to go looking.
+          */}
+          <Link
+            href={`/shoots/${shoot.id}/on-set`}
+            className="bg-accent-600 hover:bg-accent-500 shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors"
+          >
+            On set
+          </Link>
+        </div>
       </div>
 
       <section className="space-y-4">
