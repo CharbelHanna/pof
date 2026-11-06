@@ -136,28 +136,26 @@ rather than everything.
 | 0     | Foundations: monorepo, auth, tenancy, RLS, one entity end to end | ✅ done  |
 | 1     | Campaigns, shoots, sessions, shoot-type registry                 | ✅ done  |
 | 2     | Assets, uploads, moodboards                                      | ✅ done  |
-| 3     | Shot lists, checklists, on-set mode                              | ◐ partly |
+| 3     | Shot lists, checklists, on-set mode                              | ✅ done  |
 | 4     | Session templates                                                |          |
 | 5     | Locations, sun and weather                                       | ◐ partly |
 | 6     | Clients and deliverables                                         |          |
 
-Two phases are genuinely half-built, and saying "done" would hide the half
-that is not:
-
-- **Phase 3.** Shots exist with ordering, `planned`/`captured`/`skipped`
-  statuses, reference images and gear, hanging off a shoot with an optional
-  session. Checklists do not exist at all, and neither does on-set mode —
-  the one-handed, big-tap-target surface meant to be used _during_ a shoot
-  rather than before it.
-- **Phase 5.** Locations are in, including several per session, and sun times
-  are computed locally with no API, no key and no rate limit. Weather is not
-  started — and its blocker is contractual rather than technical, since
-  Open-Meteo's free tier is non-commercial.
+**Phase 5 is genuinely half-built**, and saying "done" would hide the half
+that is not. Locations are in, including several per session, and sun times
+are computed locally with no API, no key and no rate limit. Weather is not
+started — and its blocker is contractual rather than technical, since
+Open-Meteo's free tier is non-commercial.
 
 Phase 2 arrived early on purpose: it is the only feature that changes the
 deployment topology, adding a second always-on process, a queue and a
 bucket. Discovering that at the end would have meant redoing CI, compose and
 hosting.
+
+Phase 4 is next, and is the one the product is actually for: session
+templates turn a recurring kind of shoot into a one-click setup. It comes
+after Phase 3 because a template snapshots shot lists and checklists, and
+templating a shape that is still moving would mean doing it twice.
 
 Wanted but not scheduled: see [BACKLOG.md](BACKLOG.md).
 
