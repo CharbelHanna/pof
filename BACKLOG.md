@@ -8,6 +8,85 @@ When an item is picked up, move it into the roadmap or open an issue for it.
 
 ---
 
+## Suggested order
+
+Seventeen entries is more than anyone reads top to bottom, and several of them
+are secretly the same job. This is the order worth doing them in and, more
+usefully, which ones should be done together.
+
+It competes with the roadmap rather than replacing it — Phase 4 still needs
+its diff/merge prompt, and Phases 5 and 6 are unbuilt. Nothing here is more
+important than finishing templates.
+
+### 1. Stop the app apologising for itself
+
+Writing the [user guide](user-guide/) turned up four places where a page had
+to tell the reader they could not do something reasonable. That is the
+strongest signal in this file, because it is the only evidence here drawn from
+explaining the product to someone who has not built it.
+
+- **Change a session's date and time** — the worst of them. The current
+  workaround is deleting the session and losing everything attached, which is
+  advice no guide should have to give. The API already accepts the change.
+- **A location cannot record what you only learn by going** and **Save a
+  location without searching for it** — do these as one piece. Both need the
+  same thing: somewhere to edit a saved location, which does not exist at all
+  today. Splitting them means building that screen twice.
+
+All small, and together they remove three of the four apologies.
+
+### 2. Cheap completeness
+
+- **Add an existing shoot to a campaign** and **Create a campaign from the
+  shoot page** — mirror images of each other, both pure interface over
+  mutations that already exist. One piece of work, not two.
+- **Email verification on sign-up** — small, and wanted before anyone other
+  than the author has an account.
+
+### 3. Settle the scope question before building on it
+
+- **The shoot page does not separate shoot scope from session scope** is
+  mostly a design decision, and it governs the next item.
+- **Crew and gear at the session level** should follow it rather than precede
+  it. Building per-session crew onto a page that has not decided how it shows
+  the two levels means doing the layout twice.
+
+### 4. Location and light, in depth
+
+- **Sun times only reflect a session's first location** — decide which
+  location a session's light refers to.
+- **Suggest a time for a landscape session** depends on that answer, so it
+  comes after rather than alongside.
+- **Map of a shoot's locations** — the first item here needing a new
+  dependency (MapLibre and a tile source), so it is the first with a
+  procurement question rather than only an engineering one.
+
+### 5. Views, once there is something to show
+
+- **Trip dates, and what "delivery date" assumes** must be settled first: a
+  Gantt needs a date range per shoot, which is exactly what that entry is
+  about. Deciding it late means drawing the timeline twice.
+- **Calendar view** is independent of that and simpler; it can go first if a
+  month grid is wanted sooner.
+- **Gantt view** last.
+
+### 6. Bigger bets
+
+- **Tags** — the schema is trivial and the filtering interface is the whole
+  job. Worth waiting until there is enough data in the app to make filtering
+  feel necessary, because tags added early tend to go unused and then mislead.
+- **Pull references in from Pinterest and elsewhere** — start with plain URL
+  import and stop there unless it proves insufficient. A per-service
+  connector is recurring maintenance, not a one-off.
+
+### Not schedulable yet
+
+- **Colours render differently on Android and iOS** needs reproducing on a
+  real device before it can be sized at all. It is a bug report, not a task,
+  until someone has seen it happen.
+
+---
+
 ## Trip dates, and what "delivery date" assumes
 
 `shoot.delivery_date` is a single date meaning "when the edit is due with the
