@@ -5,6 +5,7 @@ import { SESSION_STATUSES, newId, type SessionStatus } from '@pof/schemas'
 import { useState } from 'react'
 
 import { SessionStops } from '~/components/session-stops.tsx'
+import { SessionTemplates } from '~/components/session-templates.tsx'
 import { orpc } from '~/lib/api.ts'
 import { useHydrated } from '~/lib/use-hydrated.ts'
 import { formatSessionTime, localInputValue, toInstant, browserTimezone } from '~/lib/time.ts'
@@ -138,6 +139,7 @@ export function SessionList({
                   timezone={session.timezone}
                   fallbackLocationId={locationId}
                 />
+                <SessionTemplates sessionId={session.id} sessionName={session.name} />
               </div>
 
               <select

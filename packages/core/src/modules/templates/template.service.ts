@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, isNull, max, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, gte, isNull, max, or, sql, type SQL } from 'drizzle-orm'
 import { schema, withTenant, type Database, type TenantContext, type TenantDb } from '@pof/db'
 import {
   templateItemPayloadSchema,
@@ -539,12 +539,27 @@ export async function saveSessionAsTemplate(
       throw new ValidationError('Cannot save a deleted session as a template', 'sessionId')
     }
 
+    /**
+     * This session's shots, plus the shoot's unassigned ones.
+     *
+     * A shot is created with no session by default — `session_id` is nullable
+     * precisely because an idea arrives long before anyone decides which day
+     * it belongs to, and the quick-add row does not ask. Taking only shots
+     * explicitly tied to this session would therefore capture almost nothing
+     * on a typical shoot, and hand back a template with a full kit list and
+     * an empty shot list.
+     *
+     * The same reasoning already governs the checklists below, in the other
+     * direction. Both ends have to agree with how the interface actually
+     * creates things, rather than with how the columns could be used.
+     */
     const shotRows = await tx
       .select()
       .from(shot)
       .where(
         and(
-          eq(shot.sessionId, session.id),
+          eq(shot.shootId, session.shootId),
+          or(eq(shot.sessionId, session.id), isNull(shot.sessionId)),
           eq(shot.workspaceId, ctx.workspaceId),
           isNull(shot.deletedAt),
         ),

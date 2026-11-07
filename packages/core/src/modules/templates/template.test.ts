@@ -445,6 +445,44 @@ describe('saveSessionAsTemplate', () => {
     expect(copiedLists[0]!.itemCount).toBe(1)
   })
 
+  /**
+   * The case the end-to-end suite caught. The shot list's quick-add creates
+   * shots with no session, because that is the honest default — so a save
+   * that only looked at shots tied to this session captured the checklists
+   * and silently dropped every shot.
+   */
+  it('captures shots that belong to the shoot rather than to this session', async () => {
+    const ctx = await ws()
+    const { shoot, session } = await shootWithSession(ctx)
+
+    // No sessionId: exactly what the interface creates by default.
+    await shots.createShot(db, ctx, {
+      shootId: shoot.id,
+      title: 'Not tied to a day',
+      status: 'planned',
+    })
+    await shots.createShot(db, ctx, {
+      shootId: shoot.id,
+      sessionId: session.id,
+      title: 'Tied to this day',
+      status: 'planned',
+    })
+
+    const saved = await templates.saveSessionAsTemplate(db, ctx, {
+      sessionId: session.id,
+      name: 'Both kinds',
+    })
+
+    const { items } = await templates.getTemplate(db, ctx, { id: saved.template.id })
+    const titles = items
+      .filter((item) => item.kind === 'shot')
+      .map((item) => (item.payload as { title: string }).title)
+
+    expect(titles).toHaveLength(2)
+    expect(titles).toContain('Not tied to a day')
+    expect(titles).toContain('Tied to this day')
+  })
+
   it('refuses a session with nothing in it', async () => {
     const ctx = await ws()
     const { session } = await shootWithSession(ctx)

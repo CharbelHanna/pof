@@ -14,6 +14,7 @@ const LINKS = [
   { href: '/shoots', label: 'Shoots' },
   { href: '/campaigns', label: 'Campaigns' },
   { href: '/agenda', label: 'Agenda' },
+  { href: '/templates', label: 'Templates' },
 ] as const
 
 export function AppNav() {
