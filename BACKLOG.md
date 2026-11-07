@@ -434,3 +434,44 @@ happened.
 
 **Rough size.** Medium for URL import, which is where most of the value is.
 Large for any single OAuth connector, and recurring rather than one-off.
+
+---
+
+## A location cannot record what you only learn by going
+
+`location` already has `access_notes`, `parking_notes` and `permit_required`.
+Nothing in the interface can set any of them, and `location-picker.tsx`
+hardcodes `permitRequired: false` on every location it creates.
+
+**Why it matters.** This is the single highest-value thing a location record
+could hold, and the only part of it you cannot look up. A name and an address
+are on a map; the gate code, the car park that actually works at 05:00, the
+fact the estate asked for a permit last time, the farmer who needs ringing —
+those exist only in the head of whoever went last, and they are forgotten by
+the next visit. A photographer returning to a spot a year later wants exactly
+these notes and nothing else.
+
+It was found while writing the user guide, which is worth saying: the page had
+to be rewritten from "a location can carry notes about access and parking" —
+true of the schema — to admitting there is nowhere to put them. A sentence
+that apologises for the product is a good signal about what to build.
+
+**What it needs.** Somewhere to edit a saved location, which does not exist
+yet either — `location-picker.tsx` can only search and select. Probably a
+small panel on the shoot's location, or an editable row in a list of saved
+places. The columns are already there, so this is interface work rather than
+a migration.
+
+**Worth deciding when picked up.**
+
+- Whether notes belong to the location (true every visit — the gate code) or
+  to the session (true this once — "the east gate is shut on the 14th").
+  Likely both eventually; the location is the one that compounds in value.
+- Whether `permit_required` deserves to be visible on the shoot, since it is
+  the one that costs a day when it is missed.
+- Whether this is the moment to add the plain-text location entry the
+  `Save a location without searching for it` entry describes, since both are
+  the same missing edit surface.
+
+**Rough size.** Small, and it pairs naturally with the manual-entry item
+above.
