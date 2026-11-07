@@ -65,6 +65,10 @@ Add a session from inside the shoot. You give it:
 Sessions appear on the **Agenda** page alongside everything else you have
 coming up.
 
+If this is a kind of session you run regularly, you can save it as a
+[template](templates.md) and apply it to the next one rather than building it
+again.
+
 ## What the statuses mean
 
 ### Shoot statuses
