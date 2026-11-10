@@ -576,7 +576,7 @@ ignoring an answer it asked for.
 
 **Worth deciding when picked up.** The subtlety that makes this not quite
 trivial: `listTemplatesSchema` filters by equality, so passing
-`shootTypeKey` would *exclude* every template saved as "Any type" — which is
+`shootTypeKey` would _exclude_ every template saved as "Any type" — which is
 the default and probably the majority. The filter wanted is "matches this
 shoot's type **or** has no type", which the API cannot currently express.
 Either widen the API or filter client-side; client-side is fine at these
