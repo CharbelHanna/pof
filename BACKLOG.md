@@ -554,3 +554,87 @@ a migration.
 
 **Rough size.** Small, and it pairs naturally with the manual-entry item
 above.
+
+---
+
+## A template's shoot type does not filter anything
+
+The Templates page offers a **Template shoot type** picker, and the detail
+page shows the label or "Any type". Nothing uses it.
+`session-templates.tsx` queries `templates.list` with no `shootTypeKey`, so
+every template is offered on every session whatever kind of shoot it is.
+
+**Why it matters.** It is the one item here that gets worse on its own. With
+three templates nobody notices; with twenty, a portrait session offers a list
+mostly made of landscape and product templates, and the picker stops being
+something you read and becomes something you scroll. Worse, the type was
+chosen deliberately when the template was made, so the interface is visibly
+ignoring an answer it asked for.
+
+**What it needs.** Filtering in the picker. The shoot's type has to reach
+`SessionTemplates`, which currently receives only the session.
+
+**Worth deciding when picked up.** The subtlety that makes this not quite
+trivial: `listTemplatesSchema` filters by equality, so passing
+`shootTypeKey` would *exclude* every template saved as "Any type" — which is
+the default and probably the majority. The filter wanted is "matches this
+shoot's type **or** has no type", which the API cannot currently express.
+Either widen the API or filter client-side; client-side is fine at these
+volumes and avoids a schema change.
+
+Also worth deciding whether a non-matching template should be hidden outright
+or merely sorted below the matching ones. Hiding is cleaner until the day
+someone genuinely wants their product packshot list on a portrait job.
+
+**Rough size.** Small.
+
+---
+
+## Checklist quantities cannot be set in a template
+
+`checklist_item` carries a quantity, shown as "×2" on a shoot and in on-set
+mode. The template editor neither shows nor sets one: lines added by hand are
+always 1.
+
+**Why it matters.** It is quiet rather than loud, which is what makes it
+worth writing down. A template saved from a session that had "Batteries ×4"
+keeps the 4 — the editor preserves it in the draft so republishing does not
+destroy it — but nobody can see it is there, and nobody can change it to 6
+without rebuilding the template from a fresh session. The number is real,
+invisible and unreachable.
+
+**What it needs.** A small number input beside each line in the editor. The
+payload already carries `quantity` and the apply path already honours it, so
+this is interface only.
+
+**Rough size.** Small.
+
+---
+
+## Older template versions cannot be seen or applied
+
+Versions are kept forever and never modified — that is the whole basis of the
+template design — but the interface only ever shows the current one, and
+applying always takes the latest.
+
+**Why it matters.** The guide now tells readers that editing a template
+leaves earlier versions and the shoots built from them untouched. That is
+true and reassuring, and a reader who believes it may reasonably go looking
+for version 2 to see what a shoot was actually built from. There is nowhere
+to look.
+
+It also blocks the honest version of "apply what that shoot used", which is
+what someone wants when reshooting for the same client.
+
+**What it needs.** Nothing in the service: `templates.get` already accepts a
+`version`, `templates.versions` lists them with their notes and dates, and
+`templates.apply` accepts a version. This is a version picker on the detail
+page and a way to choose one when applying.
+
+**Worth deciding when picked up.** Whether applying an older version should
+be offered at all, or only viewing it. Offering it is more honest about what
+the data supports; it is also one more decision in a menu that exists to be
+quick.
+
+**Rough size.** Small for viewing, small-to-medium if applying an older
+version is included.
