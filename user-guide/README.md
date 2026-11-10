@@ -20,7 +20,8 @@ anything about software.
 - **[Checklists](checklists.md)** — what to bring, what to do first, what
   happens after. Explains what Gear, Prep, Post and Travel are each for.
 - **[Templates](templates.md)** — save a session that worked and drop it onto
-  the next job, instead of typing the same prep out again.
+  the next job, instead of typing the same prep out again. Editing one leaves
+  the shoots already built from it alone.
 - **[Crew and gear](crew-and-gear.md)** — who is coming and what is going in
   the bag.
 - **[Locations and light](locations-and-light.md)** — where you are shooting,

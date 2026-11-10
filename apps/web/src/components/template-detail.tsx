@@ -3,21 +3,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { CHECKLIST_KIND_LABELS, type ChecklistKind } from '@pof/schemas'
 
+import { TemplateEditor } from '~/components/template-editor.tsx'
 import { orpc } from '~/lib/api.ts'
 
 /**
  * One template, and what is actually in it.
  *
  * The point of this page is answering "what will applying this do to my
- * shoot?" before you find out by doing it. Everything is read-only: contents
- * change by publishing a new version, which is a separate job and not yet
- * something the interface does.
+ * shoot?" before you find out by doing it.
+ *
+ * Reading and editing are separate modes rather than inline fields. Contents
+ * change only by publishing a complete new version, so a half-finished edit
+ * must never be mistaken for the template — the draft lives in
+ * `TemplateEditor` and reaches the server once, on publish.
  */
 export function TemplateDetail({ templateId }: { templateId: string }) {
   const queryClient = useQueryClient()
   const router = useRouter()
+  const [editing, setEditing] = useState(false)
 
   const { data, isPending, error } = useQuery(
     orpc.templates.get.queryOptions({ input: { id: templateId } }),
@@ -87,12 +93,23 @@ export function TemplateDetail({ templateId }: { templateId: string }) {
         {template.notes && <p className="mt-3 text-sm">{template.notes}</p>}
       </div>
 
-      {!version ? (
-        <p className="text-ink-500 text-sm">
-          This template has been named but has nothing in it, so there is nothing to apply yet. The
-          usual way to fill one is to open a shoot, find a session worth repeating, and choose{' '}
-          <strong>Save as template</strong>.
-        </p>
+      {editing ? (
+        <TemplateEditor templateId={template.id} items={items} onDone={() => setEditing(false)} />
+      ) : !version ? (
+        <div className="space-y-3">
+          <p className="text-ink-500 text-sm">
+            This template has nothing in it yet, so there is nothing to apply. Either fill it in
+            here, or open a shoot, find a session worth repeating and choose{' '}
+            <strong>Save as template</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="bg-accent-600 hover:bg-accent-500 rounded-lg px-5 py-2.5 font-medium text-white transition-colors"
+          >
+            Add contents
+          </button>
+        </div>
       ) : (
         <>
           <section className="space-y-3">
@@ -160,7 +177,17 @@ export function TemplateDetail({ templateId }: { templateId: string }) {
         </>
       )}
 
-      <div>
+      <div className="flex flex-wrap items-center gap-4">
+        {version && !editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            aria-label={`Edit contents of ${template.name}`}
+            className="border-ink-200 dark:border-ink-700 hover:bg-ink-100 dark:hover:bg-ink-900 rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+          >
+            Edit contents
+          </button>
+        )}
         <button
           type="button"
           onClick={() => remove.mutate({ id: template.id })}

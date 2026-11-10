@@ -24,6 +24,10 @@ writes a template from nothing, and you do not have to.
 
 It confirms what it took: _Saved as "Standard newborn", with 11 items._
 
+You can also start one from nothing. On the **Templates** page, type a name,
+choose a shoot type to label it with if it suits only one kind of job, and
+press **Add template** — then fill it in by hand, as below.
+
 ### What gets saved
 
 - **The shots** on that session, and any shots on the shoot that are not tied
@@ -68,6 +72,40 @@ You get the shots it will add and the checklists it will create, laid out as
 they will appear on a shoot rather than as a flat list. Worth a look before
 applying one to a real job, particularly if you made it months ago.
 
+## Changing one
+
+Shot lists and kit lists move on. The light you now take to every newborn
+session was not on the list in March, and a pose you have stopped doing is
+still in there.
+
+Open **Templates** in the menu, press the template's name, then **Edit
+contents**. A template with nothing in it yet offers **Add contents** instead
+— that is how you fill in one you started with **Add template**.
+
+The editor has the same two halves a shoot does.
+
+**Shots**, at the top. **Add a shot** puts an empty line at the end; type the
+title straight into it. Beside each shot, the two arrows move it up and down
+the order, **Details** opens **Framing**, **Subjects**, **Props** and
+**Description** for that shot, and **Remove** takes it out.
+
+**Checklists**, below. Each list has its name and its kind — **Gear**,
+**Prep**, **Post** or **Travel** — and you can change either. Under it is a
+box that takes items **one per line**; type the lot and press **Add**.
+**Remove** drops one item, **Remove list** drops the whole list. To start
+another list, type a name in the box at the bottom, choose the kind and press
+**Add list**.
+
+When it looks right, fill in **What changed (optional)** if you want a note to
+your later self — "Added the winter kit" — and press **Publish**. Beside the
+button it tells you how many items are going in.
+
+Nothing is saved until you press **Publish**. **Cancel** throws away
+everything you have just done, so finish the job in one sitting.
+
+A shot with no title, or a list with nothing on it, is quietly left out when
+you publish.
+
 ## Things worth knowing
 
 ### Editing a shoot does not change the template, and editing a template does not change the shoot
@@ -80,24 +118,33 @@ The same holds in the other direction, which matters more. A shoot you ran in
 January keeps exactly what it was given, for good. Your records of a finished
 job will not quietly change underneath you.
 
+### Editing publishes a new version rather than rewriting the old one
+
+Each time you publish, the template moves on a version — the line under its
+name reads _Version 3_ — and that is the one applied from then on.
+
+The version before it is left exactly as it was, and so is every shoot built
+from it. The autumn wedding you shot last year still lists the eleven shots it
+was given, not the fourteen the template holds today. That is deliberate
+rather than a shortcoming: a record of a finished day should not change
+because you tidied a template up in June.
+
+It also means an edit never reaches shoots you have already set up. To get the
+new version onto a shoot that is still being planned, apply the template to it
+again — remembering that applying adds rather than replaces, so you will get a
+second copy of anything already there.
+
+What you publish is the whole template, exactly as the editor shows it: a shot
+you took out is gone from the new version, though still in the old one and on
+any shoot built from it.
+
 ### Deleting a template leaves your shoots alone
 
 Shoots already built from it keep everything. The template simply stops being
 offered.
 
-### A template cannot be changed once saved
-
-There is no way to edit a template's contents in this version. If the shot
-list has moved on, save the newer session as a new template and delete the old
-one.
-
-Likewise, the **Add template** button on the Templates page only creates an
-empty one, and there is currently no way to fill it in — it will show _Nothing
-saved in it yet_ and cannot be applied. Until that changes, make templates by
-saving a session.
-
 ### An empty template is never offered
 
 If a template has nothing in it, it does not appear in the **Apply a
-template…** list at all. That is on purpose: a template that applied and did
-nothing would look like the app was broken.
+template…** list at all, until you have given it contents. That is on purpose:
+a template that applied and did nothing would look like the app was broken.
