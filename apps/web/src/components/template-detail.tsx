@@ -24,6 +24,14 @@ export function TemplateDetail({ templateId }: { templateId: string }) {
   const queryClient = useQueryClient()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
+  /**
+   * What the last publish produced, so the page can say so.
+   *
+   * Closing the editor is otherwise the only evidence that anything
+   * happened, and "the form went away" is indistinguishable from "the button
+   * did nothing" — which is precisely how it was reported.
+   */
+  const [published, setPublished] = useState<{ version: number; itemCount: number } | null>(null)
 
   const { data, isPending, error } = useQuery(
     orpc.templates.get.queryOptions({ input: { id: templateId } }),
@@ -91,10 +99,25 @@ export function TemplateDetail({ templateId }: { templateId: string }) {
           {version ? ` · Version ${version.version}` : ' · Nothing saved in it yet'}
         </p>
         {template.notes && <p className="mt-3 text-sm">{template.notes}</p>}
+
+        {published && (
+          <p role="status" className="text-accent-600 mt-3 text-sm">
+            Published version {published.version}, with {published.itemCount}{' '}
+            {published.itemCount === 1 ? 'item' : 'items'}. Shoots built from an earlier version are
+            unchanged.
+          </p>
+        )}
       </div>
 
       {editing ? (
-        <TemplateEditor templateId={template.id} items={items} onDone={() => setEditing(false)} />
+        <TemplateEditor
+          templateId={template.id}
+          items={items}
+          onDone={(result) => {
+            setEditing(false)
+            setPublished(result ?? null)
+          }}
+        />
       ) : !version ? (
         <div className="space-y-3">
           <p className="text-ink-500 text-sm">
