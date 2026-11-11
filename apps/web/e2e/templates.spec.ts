@@ -192,7 +192,7 @@ test('a template can be authored by hand and published', async ({ page }) => {
   await page.getByRole('button', { name: 'Publish' }).click()
 
   // Back to the read-only view, now showing version 1.
-  await expect(page.getByText('Version 1')).toBeVisible()
+  await expect(page.getByText('· Version 1')).toBeVisible()
   await expect(page.getByText('Wide establishing frame')).toBeVisible()
   await expect(page.getByRole('heading', { name: /Camera bag/ })).toBeVisible()
 
@@ -224,7 +224,7 @@ test('editing publishes a new version and leaves earlier shoots alone', async ({
   // Now change the template.
   await page.goto('/templates')
   await page.getByRole('link', { name: 'Evolving' }).click()
-  await expect(page.getByText('Version 1')).toBeVisible()
+  await expect(page.getByText('· Version 1')).toBeVisible()
   await page.getByLabel('Edit contents of Evolving').click()
 
   /**
@@ -240,7 +240,7 @@ test('editing publishes a new version and leaves earlier shoots alone', async ({
   await page.getByLabel('What changed').fill('Added the extra')
   await page.getByRole('button', { name: 'Publish' }).click()
 
-  await expect(page.getByText('Version 2')).toBeVisible()
+  await expect(page.getByText('· Version 2')).toBeVisible()
   await expect(page.getByText('Renamed frame')).toBeVisible()
   await expect(page.getByText('An extra frame')).toBeVisible()
 

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import {
   CHECKLIST_KINDS,
+  newId,
   CHECKLIST_KIND_LABELS,
   SHOT_FRAMING_SUGGESTIONS,
   type ChecklistKind,
@@ -23,6 +24,19 @@ import { useHydrated } from '~/lib/use-hydrated.ts'
  * version keep exactly what they were given.
  */
 
+/**
+ * React keys for draft rows, which never reach the server.
+ *
+ * `newId()` rather than `crypto.randomUUID()`, and that is not a style
+ * preference. `randomUUID` exists only in a secure context — HTTPS or
+ * localhost — so on a phone reaching the dev stack at the host's LAN IP over
+ * plain http:// it is `undefined`, and calling it throws. That shipped in
+ * v0.6.0: adding a checklist to a template crashed the page on a handset
+ * while working perfectly on the machine it was written on.
+ *
+ * `newId()` is uuidv7 over `crypto.getRandomValues`, which carries no such
+ * restriction, and it is what the rest of the app already uses.
+ */
 type DraftShot = {
   key: string
   title: string
@@ -37,7 +51,7 @@ type DraftLine = { key: string; label: string; quantity: number }
 type DraftList = { key: string; name: string; kind: ChecklistKind; lines: DraftLine[] }
 
 const emptyShot = (): DraftShot => ({
-  key: crypto.randomUUID(),
+  key: newId(),
   title: '',
   description: '',
   framing: '',
@@ -63,7 +77,13 @@ export function TemplateEditor({
   templateId: string
   /** The current version's contents, which the draft starts from. */
   items: { id: string; kind: string; payload: unknown }[]
-  onDone: () => void
+  /**
+   * Called when the editor closes. Carries the version number on a
+   * successful publish so the page can confirm it — leaving the editor is
+   * otherwise the only sign anything happened, which looks identical to the
+   * button having done nothing.
+   */
+  onDone: (published?: { version: number; itemCount: number }) => void
 }) {
   const queryClient = useQueryClient()
   const hydrated = useHydrated()
@@ -82,7 +102,7 @@ export function TemplateEditor({
       .map((item) => {
         const payload = item.payload as Partial<DraftShot> & { title: string }
         return {
-          key: crypto.randomUUID(),
+          key: newId(),
           title: payload.title,
           description: payload.description ?? '',
           framing: payload.framing ?? '',
@@ -103,7 +123,7 @@ export function TemplateEditor({
       }
       const groupKey = `${payload.checklistKind}:${payload.checklistName}`
       const line = {
-        key: crypto.randomUUID(),
+        key: newId(),
         label: payload.label,
         quantity: payload.quantity ?? 1,
       }
@@ -111,7 +131,7 @@ export function TemplateEditor({
       if (existing) existing.lines.push(line)
       else
         grouped.set(groupKey, {
-          key: crypto.randomUUID(),
+          key: newId(),
           name: payload.checklistName,
           kind: payload.checklistKind,
           lines: [line],
@@ -127,12 +147,12 @@ export function TemplateEditor({
 
   const publish = useMutation(
     orpc.templates.publish.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (result) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: orpc.templates.get.key() }),
           queryClient.invalidateQueries({ queryKey: orpc.templates.list.key() }),
         ])
-        onDone()
+        onDone({ version: result.version, itemCount: result.itemCount })
       },
     }),
   )
@@ -436,7 +456,7 @@ export function TemplateEditor({
                           lines: [
                             ...row.lines,
                             ...labels.map((label) => ({
-                              key: crypto.randomUUID(),
+                              key: newId(),
                               label,
                               quantity: 1,
                             })),
@@ -458,7 +478,7 @@ export function TemplateEditor({
             setLists((current) => [
               ...current,
               {
-                key: crypto.randomUUID(),
+                key: newId(),
                 name: newListName.trim(),
                 kind: newListKind,
                 lines: [],
@@ -518,7 +538,7 @@ export function TemplateEditor({
           >
             Publish
           </button>
-          <button type="button" onClick={onDone} className="text-ink-500 text-sm">
+          <button type="button" onClick={() => onDone()} className="text-ink-500 text-sm">
             Cancel
           </button>
           <span className="text-ink-500 text-xs">
